@@ -1,0 +1,7 @@
+elasticsearch[async]==8.11.1
+fastapi==0.104.1
+orjson==3.9.10
+pydantic==2.5.2
+pydantic-settings==2.0.3
+redis==5.0.1
+uvicorn[standard]==0.24.0.post1

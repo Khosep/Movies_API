@@ -1,0 +1,6 @@
+backoff==2.2.1
+elasticsearch==8.11.0
+psycopg==3.1.13
+psycopg-binary==3.1.13
+pydantic==2.5.2
+pydantic-settings==2.0.3
