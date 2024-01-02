@@ -1,29 +1,40 @@
-import uuid
 import enum
+import uuid
 from datetime import datetime
 
 from pydantic import BaseModel, Field, ConfigDict
+
 
 class RoleEnum(enum.Enum):
     actor = 'actor'
     writer = 'writer'
     director = 'director'
 
+
 class PGMoviePerson(BaseModel):
     """Person used for PGMovie"""
-    person_id: uuid.UUID
-    person_name: str
-    person_role: str
+    id: uuid.UUID
+    full_name: str
+
+
+class PGMovieGenre(BaseModel):
+    """Genre used for PGMovie"""
+    id: uuid.UUID
+    name: str
+
 
 class PGMovie(BaseModel):
     """Get from movies_query.sql"""
     id: uuid.UUID
     title: str
-    description: str | None
     rating: float | None
+    description: str | None
     updated_at: datetime
-    persons: list[PGMoviePerson]
-    genres: list[str]
+    genres: list[PGMovieGenre]
+    actors: list[PGMoviePerson]
+    writers: list[PGMoviePerson]
+    directors: list[PGMoviePerson]
+
 
 class PGGenre(BaseModel):
     """Get from genres_query.sql"""
@@ -47,36 +58,43 @@ class PGPerson(BaseModel):
     films: list[PGPersonFilms]
 
 
-class ESMoviePerson(BaseModel):
-    id: uuid.UUID
+class ESMovieGenre(BaseModel):
+    uuid: uuid.UUID
     name: str
+
+
+class ESMoviePerson(BaseModel):
+    uuid: uuid.UUID
+    full_name: str
+
 
 class ESMovie(BaseModel):
     """Use for index 'movies'"""
-    id: uuid.UUID
-    imdb_rating: float | None
-    genre: list[str] = Field(default_factory=list)
+    uuid: uuid.UUID
     title: str
+    imdb_rating: float | None
     description: str | None
-    director: list[str] = Field(default_factory=list)
-    actors_names: list[str] = Field(default_factory=list)
-    writers_names: list[str] = Field(default_factory=list)
+    genre: list[ESMovieGenre] = Field(default_factory=list)
     actors: list[ESMoviePerson] = Field(default_factory=list)
     writers: list[ESMoviePerson] = Field(default_factory=list)
+    directors: list[ESMoviePerson] = Field(default_factory=list)
+
 
 class ESGenre(BaseModel):
     """Use for index 'genres'"""
-    id: uuid.UUID
+    uuid: uuid.UUID
     name: str
+
 
 class ESPersonFilms(BaseModel):
     """Films used for ESPerson"""
     model_config = ConfigDict(use_enum_values=True)
-    id: uuid.UUID
+    uuid: uuid.UUID
     roles: list[RoleEnum]
+
 
 class ESPerson(BaseModel):
     """Use for index 'persons'"""
-    id: uuid.UUID
+    uuid: uuid.UUID
     full_name: str
     films: list[ESPersonFilms]

@@ -44,7 +44,7 @@ class ElasticsearchLoader:
 
             actions = [{
                 '_index': index_name,
-                '_id': row['id'],
+                '_id': row['uuid'],
                 '_source': row
             } for row in data]
 

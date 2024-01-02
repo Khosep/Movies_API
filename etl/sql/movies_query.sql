@@ -1,24 +1,49 @@
 -- Get all the necessary fields for subsequent transformation and transfer
---   to Elasticsearch (according to the index (see es_index.json))
+--   to Elasticsearch (according to the index (see movies_es_index.json))
 -- Compared to Postgres fields  (film_work) 'fw.type' and 'fw.created_at' have been removed from output
 --   since they are not used in th ES index
 SELECT
    fw.id,
    fw.title,
-   fw.description,
    fw.rating,
+   fw.description,
    fw.updated_at,
    COALESCE (
        json_agg(
-           DISTINCT jsonb_build_object(
-               'person_role', pfw.role,
-               'person_id', p.id,
-               'person_name', p.full_name
-           )
-       ) FILTER (WHERE p.id is not null),
+            DISTINCT jsonb_build_object(
+           		'id', g.id,
+           		'name', g.name
+       		)
+       ),
        '[]'
-   ) as persons,
-   array_agg(DISTINCT g.name) as genres
+       ) as genres,
+   COALESCE (
+       json_agg(
+            DISTINCT jsonb_build_object(
+                'id', p.id,
+                'full_name', p.full_name
+           )
+       ) FILTER (WHERE pfw.role = 'actor'),
+       '[]'
+   ) as actors,
+   COALESCE (
+       json_agg(
+            DISTINCT jsonb_build_object(
+                'id', p.id,
+                'full_name', p.full_name
+           )
+       ) FILTER (WHERE pfw.role = 'writer'),
+       '[]'
+   ) as writers,
+   COALESCE (
+       json_agg(
+            DISTINCT jsonb_build_object(
+                'id', p.id,
+                'full_name', p.full_name
+           )
+       ) FILTER (WHERE pfw.role = 'director'),
+       '[]'
+   ) as directors
 FROM content.film_work fw
 LEFT JOIN content.person_film_work pfw ON pfw.film_work_id = fw.id
 LEFT JOIN content.person p ON p.id = pfw.person_id

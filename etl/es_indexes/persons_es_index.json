@@ -42,7 +42,7 @@
   "mappings": {
     "dynamic": "strict",
     "properties": {
-      "id": {
+      "uuid": {
         "type": "keyword"
       },
       "full_name": {
@@ -58,7 +58,7 @@
         "type": "nested",
         "dynamic": "strict",
         "properties": {
-          "id": {
+          "uuid": {
             "type": "keyword"
           },
           "roles": {

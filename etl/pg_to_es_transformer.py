@@ -53,49 +53,50 @@ class PostgresToElasticsearchTransformer:
 
     def __transform_movie(self, movie_in: PGMovie) -> dict[str, Any]:
         """Transform movie according to Elasticsearh index schema"""
-        person_data = self.__transform_movie_person(movie_in.persons)
         try:
             movie_out = ESMovie(
-                id=movie_in.id,
-                imdb_rating=movie_in.rating,
-                genre=movie_in.genres,
+                uuid=movie_in.id,
                 title=movie_in.title,
+                imdb_rating=movie_in.rating,
                 description=movie_in.description,
-                **person_data,
+                genre=[{'uuid': g.id, 'name': g.name} for g in movie_in.genres],
+                actors=[{'uuid': a.id, 'full_name': a.full_name} for a in movie_in.actors],
+                writers=[{'uuid': w.id, 'full_name': w.full_name} for w in movie_in.writers],
+                directors=[{'uuid': d.id, 'full_name': d.full_name} for d in movie_in.directors],
             )
             return movie_out.model_dump()
         except ValidationError as e:
             self._logger.error(e)
             raise e
 
-    @staticmethod
-    def __transform_movie_person(person_in: list[PGMoviePerson]) -> dict[str, Any]:
-        """Create dict of person fields ('director', 'actors_names', 'writers_names', 'actors', 'writers')
-        suitable for Elasticsearh index schema (see 'movies_index.json')."""
-        fields = ['director', 'actors_names', 'writers_names', 'actors', 'writers']
-        map_field = {
-            'director': 'director',
-            'actor': 'actors_names',
-            'writer': 'writers_names',
-        }
-        person_data = {field: [] for field in fields}
-        for p in person_in:
-            person_data[map_field[p.person_role]].append(p.person_name)
-            if p.person_role in ('actor', 'writer'):
-                person_data[p.person_role + 's'].append(ESMoviePerson(id=p.person_id, name=p.person_name))
+    # TODO Delete
+    # @staticmethod
+    # def __transform_movie_person(person_in: list[PGMoviePerson]) -> dict[str, Any]:
+    #     """Create dict of person fields ('director', 'actors_names', 'writers_names', 'actors', 'writers')
+    #     suitable for Elasticsearh index schema (see 'movies_index.json')."""
+    #     fields = ['director', 'actors_names', 'writers_names', 'actors', 'writers']
+    #     map_field = {
+    #         'director': 'director',
+    #         'actor': 'actors_names',
+    #         'writer': 'writers_names',
+    #     }
+    #     person_data = {field: [] for field in fields}
+    #     for p in person_in:
+    #         person_data[map_field[p.person_role]].append(p.person_name)
+    #         if p.person_role in ('actor', 'writer'):
+    #             person_data[p.person_role + 's'].append(ESMoviePerson(id=p.person_id, name=p.person_name))
+    #
+    #     return person_data
 
-        return person_data
 
-    # TODO Не надо ли переделать под 'uuid' вместо 'id'?
     def _transform_genres(self, data: list[dict[str, Any]]) -> list[dict[str, Any]]:
         chunk = []
         for row in data:
             row_in = PGGenre(**row)
-            row_out = ESGenre(id=row_in.id, name=row_in.name).model_dump()
+            row_out = ESGenre(uuid=row_in.id, name=row_in.name).model_dump()
             chunk.append(row_out)
         return chunk
 
-    # TODO Не надо ли переделать под 'uuid' вместо 'id'?
     def _transform_persons(self, data: list[dict[str, Any]]) -> list[dict[str, Any]]:
         chunk = []
         for row in data:
@@ -109,7 +110,7 @@ class PostgresToElasticsearchTransformer:
         films_data = self.__transform_person_films(peron_in.films)
         try:
             person_out = ESPerson(
-                id=peron_in.id,
+                uuid=peron_in.id,
                 full_name=peron_in.full_name,
                 films=films_data
             )
@@ -122,6 +123,6 @@ class PostgresToElasticsearchTransformer:
     def __transform_person_films(films_in: list[PGPersonFilms]) -> list[ESPersonFilms]:
         films_data = []
         for f in films_in:
-            f_data = ESPersonFilms(id=f.film_work_id, roles=f.roles)
+            f_data = ESPersonFilms(uuid=f.film_work_id, roles=f.roles)
             films_data.append(f_data)
         return films_data
