@@ -2,8 +2,8 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
-from movies_fastapi.src.api.v1.schemas.genre_schema import GenreBase
-from movies_fastapi.src.api.v1.schemas.person_schema import PersonBase
+from src.api.v1.schemas.genre_schema import GenreBase
+from src.api.v1.schemas.person_schema import PersonBase
 
 
 class FilmBase(BaseModel):

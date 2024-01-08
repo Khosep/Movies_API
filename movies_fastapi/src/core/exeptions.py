@@ -1,0 +1,2 @@
+class ElasticsearchError(Exception):
+    pass

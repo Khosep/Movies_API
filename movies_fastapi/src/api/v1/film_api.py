@@ -1,47 +1,51 @@
 from http import HTTPStatus
-from typing import Annotated
+from typing import Annotated, Any
 from uuid import UUID
 
-from fastapi import APIRouter, HTTPException, status, Depends
+from fastapi import APIRouter, HTTPException, status, Depends, Request
 
 from .schemas.film_schema import FilmBase, FilmDetails
-from ...services.film_service import FilmService, get_film_service
+from src.services.film_service import FilmService, get_film_service
+from .schemas.query_params import SearchParam
+
+# from services.film_service import FilmService, get_film_service
 
 router = APIRouter()
 
 
 
-@router.get('',
-            response_model=list[FilmBase],
-            summary='List of films',
-            description='List of films with pagination, filtering by genre and sorting by rating',
-            )
-async def film_list(
-        film_service: Annotated[FilmService, Depends(get_film_service)],
-        query_params: Annotated[FilmListParams, Depends()]
-) -> list[FilmBase]:
-    #TODO Реализовать
-    films = await film_service.get_list(query_params)
-    if not films:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Films not found')
-    return [FilmBase(**film) for film in films]
+# @router.get('',
+#             response_model=list[FilmBase],
+#             summary='List of films',
+#             description='List of films with pagination, filtering by genre and sorting by rating',
+#             )
+# async def film_list(
+#         film_service: Annotated[FilmService, Depends(get_film_service)],
+#         query_params: Annotated[FilmListParams, Depends()]
+# ) -> list[FilmBase]:
+#     #TODO Реализовать
+#     films = await film_service.get_list(query_params)
+#     if not films:
+#         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Films not found')
+#     return [FilmBase(**film) for film in films]
 
 
 @router.get('/{film_id}',
             response_model=FilmDetails,
             summary='Film information',
-            description='Full information about the film by its id',
+            description='Full information about the film by its uuid',
             )
 async def film_details(
-        film_id: str,
+        film_id: UUID,
         film_service: Annotated[FilmService, Depends(get_film_service)],
+        request: Request
 ) -> FilmDetails:
-    #TODO Проверить
-    film = await film_service.get_by_id(film_id)
+
+    film = await film_service.get_film_by_uuid(film_id, request)
     if not film:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Film not found')
 
-    return FilmDetails(**film)
+    return film
 
 
 @router.get('/search',
@@ -51,19 +55,12 @@ async def film_details(
             )
 async def film_search(
         film_service: Annotated[FilmService, Depends(get_film_service)],
-        query_params: Annotated[SearchParams, Depends()]
+        query_params: Annotated[SearchParam, Depends()],
+        request: Request
 ) -> list[FilmBase]:
     #TODO Реализовать
-    film = await film_service.get_by_id(film_id)
-    if not film:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Film not found')
+    films = await film_service.get_films_by_search(query_params, request)
+    if not films:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Films not found')
 
     return [FilmBase(**film) for film in films]
-
-#TODO Проблема в том, что на выходе должны быть uuid - либо переводить в другой формат здесь,
-# либо менять загрузку в индексы (на uuid)
-
-
-
-
-

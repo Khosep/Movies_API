@@ -8,15 +8,17 @@ from fastapi.responses import ORJSONResponse
 from redis.asyncio import Redis
 
 from core.config import app_settings, redis_settings, es_settings
-from db import elastic
-from db import redis
+
+from src.db import redis
 from api.v1 import base_api, film_api
+from src.db import elastic
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup
-    redis.redis = Redis(host=redis_settings.redis_host, port=redis_settings.redis_port)
+    redis.redis = Redis.from_url(redis_settings.redis_url)
+    print(redis.redis)
     elastic.es = AsyncElasticsearch(es_settings.es_url)
     yield
     # Clean up the ML models and release the resources
@@ -36,6 +38,7 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+#TODO DELETE
 
 # @app.on_event('startup')
 # async def startup():

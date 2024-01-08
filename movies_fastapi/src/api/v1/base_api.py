@@ -1,7 +1,7 @@
 from fastapi import APIRouter
 from fastapi.responses import RedirectResponse
 
-from movies_fastapi.src.core.config import app_settings
+from src.core.config import app_settings
 
 
 router = APIRouter()

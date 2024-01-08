@@ -1,16 +1,10 @@
 import pathlib
 
-from pydantic import BaseModel, PostgresDsn, DirectoryPath, Field
+from pydantic import RedisDsn
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 BASE_DIR = pathlib.Path(__file__).resolve().parent.parent  # abs path to \src
 ENV_PATH = pathlib.Path(BASE_DIR, '.env')
-
-
-#TODO Remove
-class PaginationParams(BaseModel):
-    limit: int = 10
-    offset: int = 0
 
 
 class AppSettings(BaseSettings):
@@ -38,8 +32,11 @@ class ESSettings(BaseSettings):
     es_port: int = ...
     es_protocol: str = 'http'
 
-    # es_index_name: str = 'movies'
-    # es_index_schema: pathlib.Path = pathlib.Path(BASE_DIR, 'es_index.json')
+    es_index_names: dict[str, str] = {
+        'movies': 'movies',
+        'genres': 'genres',
+        'persons': 'movies',
+    }
 
     @property
     def es_url(self) -> str:
@@ -51,6 +48,11 @@ class RedisSettings(BaseSettings):
 
     redis_host: str = ...
     redis_port: int = ...
+    redis_cache_expiration_time_sec: int = 1 * 60
+
+    @property
+    def redis_url(self) -> RedisDsn:
+        return f'redis://{self.redis_host}:{self.redis_port}'
 
 
 app_settings = AppSettings()
