@@ -32,10 +32,23 @@ class ESSettings(BaseSettings):
     es_port: int = ...
     es_protocol: str = 'http'
 
-    es_index_names: dict[str, str] = {
-        'movies': 'movies',
-        'genres': 'genres',
-        'persons': 'movies',
+    #TODO Delete
+    # es_index_names: dict[str, str] = {
+    #     'movies': 'movies',
+    #     'genres': 'genres',
+    #     'persons': 'persons',
+    # }
+
+    # tuple: (index_name, search_fields)
+    es_index_names: dict[str, tuple] = {
+        'movies': ('movies', ['title']),
+        'genres': ('genres', ['name']),
+        'persons': ('persons', ['full_name']),
+    }
+    es_indexes: dict[str, dict] = {
+        'movies': {'index_name': 'movies', 'search_fields': ['title']},
+        'genres': {'index_name': 'genres', 'search_fields': ['name']},
+        'persons': {'index_name': 'persons', 'search_fields': ['full_name']},
     }
 
     @property
@@ -58,3 +71,8 @@ class RedisSettings(BaseSettings):
 app_settings = AppSettings()
 es_settings = ESSettings()
 redis_settings = RedisSettings()
+
+index_name = es_settings.es_indexes['movies']['index_name']
+index_name = es_settings.es_indexes['movies']['search_fields']
+print(index_name)
+# print(*es_settings.es_index_names['movies'].keys())

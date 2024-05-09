@@ -28,10 +28,8 @@ class FilmService:
         # retrieve data from redis cache if exists
         if film := await self.redis_service.retrieve_from_cache(request):
             return film
-
         # retrieve data from elastic
         film = await self.es_service.get(self.index_name, film_id)
-
         # add data to redis cache
         await self.redis_service.add_to_cache(request, film)
 
@@ -47,10 +45,10 @@ class FilmService:
 
         #TODO all query_params?
         # retrieve data from elastic
-        films = await self.es_service.get_list(self.index_name, query_params.query)
+        films = await self.es_service.get_list(self.index_name, query_params)
 
         # add data to redis cache
-        await self.redis_service.add_to_cache(request, film)
+        await self.redis_service.add_to_cache(request, films)
 
         return films if films else None
 
@@ -104,4 +102,4 @@ def get_film_service(
         redis: Annotated[Redis, Depends(get_redis)]
 ) -> FilmService:
     print(f'f_ser: {elastic=}')
-    return FilmService(elastic, redis, index_name=es_settings.es_index_names['movies'])
+    return FilmService(elastic, redis, index_name=es_settings.es_indexes['movies']['index_name'])
