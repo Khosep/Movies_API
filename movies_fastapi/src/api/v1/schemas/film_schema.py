@@ -2,8 +2,8 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
-from src.api.v1.schemas.genre_schema import GenreBase
-from src.api.v1.schemas.person_schema import PersonBase
+from api.v1.schemas.genre_schema import GenreBase
+from api.v1.schemas.person_schema import PersonBase
 
 
 class FilmBase(BaseModel):

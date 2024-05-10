@@ -1,17 +1,19 @@
 import logging.config
 from abc import ABC, abstractmethod
+from typing import Any
 from uuid import UUID
 
 import orjson
 from elasticsearch import NotFoundError, AsyncElasticsearch
-from elasticsearch_dsl import Search, Q
+from elasticsearch_dsl import Search, Q, AsyncSearch
+from elasticsearch_dsl.query import MultiMatch, Match
 from fastapi import Request
 from redis.asyncio import Redis
 
-from src.api.v1.schemas.query_params import SearchParam
-from src.core.config import app_settings, redis_settings, es_settings
-from src.core.exeptions import ElasticsearchError
-from src.core.logger import LOGGING
+from api.v1.schemas.query_params import SearchParam
+from core.config import app_settings, redis_settings, es_settings
+from core.exeptions import ElasticsearchError
+from core.logger import LOGGING
 
 logging.config.dictConfig(LOGGING)
 logger = logging.getLogger(__name__)
@@ -32,10 +34,40 @@ class ElasticsearchDBService(DBService):
     def __init__(self, es_client: AsyncElasticsearch):
         self.es_client = es_client
 
-    async def get(self, index_name: str, doc_id: UUID) -> dict | None:
-        """Get item by id (uuid)."""
+    # TODO Delete Sample from official documtation
+    # from elasticsearch_dsl import AsyncSearch
+    # https://www.tipoit.kz/elk-bool-query
+    # https://elasticsearch-dsl.readthedocs.io/en/latest/search_dsl.html
+
+    async def run_query():
+        q = Match(title={"query": "web framework", "type": "phrase"})
+        s = AsyncSearch(index="my-index") \
+            .filter("term", category="search") \
+            .query("match", title="python") \
+            .exclude("match", description="beta")
+        async for hit in s:
+            print(hit.title)
+
+    async def run_query():
+        s = AsyncSearch(index="my-index")
+        .filter("term", category="search")
+        .query("multi_match", query="python", fields=["title", "description"])
+        .exclude("match", description="beta")
+
+    async for hit in s:
+        print(hit.title)
+
+    async def get(self, index_name: str, filter: dict[str, Any]) -> dict | None:
+        """Get item by fields."""
 
         try:
+            s = AsyncSearch(index=index_name) \
+                .filter("term", category="search") \
+                .query("match", title="python") \
+                .exclude("match", description="beta")
+            async for hit in s:
+                print(hit.title)
+
             doc = await self.es_client.get(index=index_name, id=str(doc_id))
             item = doc['_source']
             print(f'bs->{type(item)=}')
@@ -43,6 +75,18 @@ class ElasticsearchDBService(DBService):
 
         except NotFoundError:
             return None
+
+    # async def get(self, index_name: str, doc_id: UUID) -> dict | None:
+    #     """Get item by id (uuid)."""
+    #
+    #     try:
+    #         doc = await self.es_client.get(index=index_name, id=str(doc_id))
+    #         item = doc['_source']
+    #         print(f'bs->{type(item)=}')
+    #         return item
+    #
+    #     except NotFoundError:
+    #         return None
 
     async def get_list(self, index_name: str, query_params: SearchParam) -> list[dict] | None:
         """Get list of items by search."""

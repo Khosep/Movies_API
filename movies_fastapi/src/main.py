@@ -9,9 +9,9 @@ from redis.asyncio import Redis
 
 from core.config import app_settings, redis_settings, es_settings
 
-from src.db import redis
+from db import redis
 from api.v1 import base_api, film_api
-from src.db import elastic
+from db import elastic
 
 
 @asynccontextmanager

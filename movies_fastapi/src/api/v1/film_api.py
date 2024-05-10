@@ -5,12 +5,32 @@ from uuid import UUID
 from fastapi import APIRouter, HTTPException, status, Depends, Request
 
 from .schemas.film_schema import FilmBase, FilmDetails
-from src.services.film_service import FilmService, get_film_service
+from services.film_service import FilmService, get_film_service
 from .schemas.query_params import SearchParam
 
 # from services.film_service import FilmService, get_film_service
 
 router = APIRouter()
+
+# TODO [Optional]
+# Get persons for certain film (search by film title)
+@router.get('/{film_title}',
+            response_model=FilmDetails,
+            summary='Film information',
+            description='Full information about the film by its title',
+            )
+async def film_details(
+        film_title: str,
+        film_service: Annotated[FilmService, Depends(get_film_service)],
+        request: Request
+) -> FilmDetails:
+
+    film = await film_service.get_film_by_title(film_title, request)
+    if not film:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Film not found')
+
+    return film
+
 
 
 

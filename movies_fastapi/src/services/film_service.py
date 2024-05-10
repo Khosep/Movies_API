@@ -7,13 +7,13 @@ from elasticsearch import AsyncElasticsearch, NotFoundError
 from fastapi import Depends, Request
 from redis.asyncio import Redis
 
-from src.api.v1.schemas.film_schema import FilmDetails
-from src.api.v1.schemas.query_params import SearchParam
-from src.core.config import redis_settings, es_settings
-from src.db.elastic import get_elastic
-from src.db.redis import get_redis
-from src.models.film_model import Film
-from src.services.base_service import ElasticsearchDBService, RedisCacheService
+from api.v1.schemas.film_schema import FilmDetails
+from api.v1.schemas.query_params import SearchParam
+from core.config import redis_settings, es_settings
+from db.elastic import get_elastic
+from db.redis import get_redis
+from models.film_model import Film
+from services.base_service import ElasticsearchDBService, RedisCacheService
 
 
 class FilmService:
@@ -22,6 +22,21 @@ class FilmService:
         self.es_service = ElasticsearchDBService(elastic)
         self.redis_service = RedisCacheService(redis)
         self.index_name = index_name
+
+    async def get_film_by_title(self, film_title: str, request: Request) -> FilmDetails | None:
+
+        # retrieve data from redis cache if exists
+        if film := await self.redis_service.retrieve_from_cache(request):
+            return film
+        # retrieve data from elastic
+        film = await self.es_service.get(self.index_name, film_title)
+        # add data to redis cache
+        await self.redis_service.add_to_cache(request, film)
+        print(f'f-s_gfbt{film=}')
+        #TODO Mayby return film
+        return film if film else None
+
+
 
     async def get_film_by_uuid(self, film_id: UUID, request: Request) -> FilmDetails | None:
 

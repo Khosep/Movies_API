@@ -1,7 +1,7 @@
 from fastapi import APIRouter
 from fastapi.responses import RedirectResponse
 
-from src.core.config import app_settings
+from core.config import app_settings
 
 
 router = APIRouter()
