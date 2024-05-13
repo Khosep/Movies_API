@@ -73,6 +73,7 @@ es_settings = ESSettings()
 redis_settings = RedisSettings()
 
 index_name = es_settings.es_indexes['movies']['index_name']
-index_name = es_settings.es_indexes['movies']['search_fields']
-print(index_name)
+print(f'config: {index_name=}')
+# index_name = es_settings.es_indexes['movies']['search_fields']
+# print(f'config: {index_name=}')
 # print(*es_settings.es_index_names['movies'].keys())

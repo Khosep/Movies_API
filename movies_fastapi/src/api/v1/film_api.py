@@ -14,22 +14,25 @@ router = APIRouter()
 
 # TODO [Optional]
 # Get persons for certain film (search by film title)
+
 @router.get('/{film_title}',
-            response_model=FilmDetails,
-            summary='Film information',
+            response_model=list[FilmDetails],
+            summary='Films by its title',
             description='Full information about the film by its title',
             )
 async def film_details(
         film_title: str,
         film_service: Annotated[FilmService, Depends(get_film_service)],
         request: Request
-) -> FilmDetails:
+) -> list[FilmDetails]:
 
-    film = await film_service.get_film_by_title(film_title, request)
-    if not film:
+    films = await film_service.get_film_by_title(film_title, request)
+    print(f'f_api: {films=}')
+    print(f'f_api: {request.url=}')
+    if not films:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Film not found')
 
-    return film
+    return films
 
 
 
@@ -50,22 +53,22 @@ async def film_details(
 #     return [FilmBase(**film) for film in films]
 
 
-@router.get('/{film_id}',
-            response_model=FilmDetails,
-            summary='Film information',
-            description='Full information about the film by its uuid',
-            )
-async def film_details(
-        film_id: UUID,
-        film_service: Annotated[FilmService, Depends(get_film_service)],
-        request: Request
-) -> FilmDetails:
-
-    film = await film_service.get_film_by_uuid(film_id, request)
-    if not film:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Film not found')
-
-    return film
+# @router.get('/{film_id}',
+#             response_model=FilmDetails,
+#             summary='Film information',
+#             description='Full information about the film by its uuid',
+#             )
+# async def film_details(
+#         film_id: UUID,
+#         film_service: Annotated[FilmService, Depends(get_film_service)],
+#         request: Request
+# ) -> FilmDetails:
+#
+#     film = await film_service.get_film_by_uuid(film_id, request)
+#     if not film:
+#         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Film not found')
+#
+#     return film
 
 
 @router.get('/search',

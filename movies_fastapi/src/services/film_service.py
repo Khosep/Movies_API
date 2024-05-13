@@ -4,6 +4,7 @@ from typing import Optional, Annotated
 from uuid import UUID
 
 from elasticsearch import AsyncElasticsearch, NotFoundError
+from elasticsearch_dsl.response import Hit
 from fastapi import Depends, Request
 from redis.asyncio import Redis
 
@@ -23,32 +24,53 @@ class FilmService:
         self.redis_service = RedisCacheService(redis)
         self.index_name = index_name
 
-    async def get_film_by_title(self, film_title: str, request: Request) -> FilmDetails | None:
-
-        # retrieve data from redis cache if exists
-        if film := await self.redis_service.retrieve_from_cache(request):
-            return film
-        # retrieve data from elastic
-        film = await self.es_service.get(self.index_name, film_title)
-        # add data to redis cache
-        await self.redis_service.add_to_cache(request, film)
-        print(f'f-s_gfbt{film=}')
-        #TODO Mayby return film
-        return film if film else None
-
-
-
     async def get_film_by_uuid(self, film_id: UUID, request: Request) -> FilmDetails | None:
 
         # retrieve data from redis cache if exists
-        if film := await self.redis_service.retrieve_from_cache(request):
-            return film
+        # if film := await self.redis_service.retrieve_from_cache(request):
+        #     return film
         # retrieve data from elastic
-        film = await self.es_service.get(self.index_name, film_id)
-        # add data to redis cache
-        await self.redis_service.add_to_cache(request, film)
+        film = await self.es_service.get_by_uuid(self.index_name, film_id)
 
-        return film if film else None
+        # add data to redis cache
+        # await self.redis_service.add_to_cache(request, film)
+
+        return film
+
+
+    async def get_film_by_title(self, film_title: str, request: Request) -> list[Hit] | None:
+
+        # retrieve data from redis cache if exists
+        # if film := await self.redis_service.retrieve_from_cache(request):
+        #     return film
+        # retrieve data from elastic
+        obj_in = {'title': film_title}
+        print(f'f-s_gfbt {obj_in=}')
+        films = await self.es_service.get(self.index_name, obj_in)
+        # add data to redis cache
+        # await self.redis_service.add_to_cache(request, film)
+
+        return films
+
+    # TODO Реализовать поиск по нескольким условиям (возможно объединение с get_film_by_title)
+    async def get_film_by_fields(self, film_title: str, request: Request) -> list[Hit] | None:
+
+        # retrieve data from redis cache if exists
+        # if film := await self.redis_service.retrieve_from_cache(request):
+        #     return film
+        # retrieve data from elastic
+        obj_in = {'title': film_title}
+        print(f'f-s_gfbt {obj_in=}')
+        films = await self.es_service.get(self.index_name, obj_in)
+        # add data to redis cache
+        # await self.redis_service.add_to_cache(request, film)
+
+        return films
+
+
+
+
+
 
     async def get_films_by_search(self, query_params: SearchParam, request: Request) -> FilmDetails | None:
 

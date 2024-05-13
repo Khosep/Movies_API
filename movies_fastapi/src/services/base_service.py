@@ -5,8 +5,9 @@ from uuid import UUID
 
 import orjson
 from elasticsearch import NotFoundError, AsyncElasticsearch
-from elasticsearch_dsl import Search, Q, AsyncSearch
+from elasticsearch_dsl import Search, Q, AsyncSearch, async_connections
 from elasticsearch_dsl.query import MultiMatch, Match
+from elasticsearch_dsl.response import Hit
 from fastapi import Request
 from redis.asyncio import Redis
 
@@ -34,47 +35,114 @@ class ElasticsearchDBService(DBService):
     def __init__(self, es_client: AsyncElasticsearch):
         self.es_client = es_client
 
-    # TODO Delete Sample from official documtation
+    # TODO Delete Sample from official documentation
     # from elasticsearch_dsl import AsyncSearch
     # https://www.tipoit.kz/elk-bool-query
     # https://elasticsearch-dsl.readthedocs.io/en/latest/search_dsl.html
 
-    async def run_query():
-        q = Match(title={"query": "web framework", "type": "phrase"})
-        s = AsyncSearch(index="my-index") \
-            .filter("term", category="search") \
-            .query("match", title="python") \
-            .exclude("match", description="beta")
-        async for hit in s:
-            print(hit.title)
+    # async_connections.create_connection('conn1', hosts=es_settings.es_url, timeout=20)
+    # doc = await self.es_client.get(index=index_name, id=str(doc_id))
+    # item = doc['_source']
+    # print(f'bs->{type(item)=}')
+    # return item
+    # async def run_query():
+    #     q = Match(title={"query": "web framework", "type": "phrase"})
+    #     s = AsyncSearch(index="my-index") \
+    #         .filter("term", category="search") \
+    #         .query("match", title="python") \
+    #         .exclude("match", description="beta")
+    #     async for hit in s:
+    #         print(hit.title)
 
-    async def run_query():
-        s = AsyncSearch(index="my-index")
-        .filter("term", category="search")
-        .query("multi_match", query="python", fields=["title", "description"])
-        .exclude("match", description="beta")
+    # async def run_query():
+    #     s = AsyncSearch(index="my-index")
+    #     .filter("term", category="search")
+    #     .query("multi_match", query="python", fields=["title", "description"])
+    #     .exclude("match", description="beta")
+    #
+    #     async for hit in s:
+    #         print(hit.title)
 
-    async for hit in s:
-        print(hit.title)
+    # async def get_by_uuid(self, index_name: str, doc_id: UUID):
+    #     doc = await self.es_client.get(index=index_name, id=str(doc_id))
+    #     item = doc['_source']
+    #     print(f'bs->{type(item)=}')
+    #     return item
 
-    async def get(self, index_name: str, filter: dict[str, Any]) -> dict | None:
-        """Get item by fields."""
+
+    async def get_by_uuid(self, index_name: str, doc_id: UUID):
 
         try:
-            s = AsyncSearch(index=index_name) \
-                .filter("term", category="search") \
-                .query("match", title="python") \
-                .exclude("match", description="beta")
-            async for hit in s:
-                print(hit.title)
-
-            doc = await self.es_client.get(index=index_name, id=str(doc_id))
-            item = doc['_source']
-            print(f'bs->{type(item)=}')
-            return item
-
-        except NotFoundError:
+            s = AsyncSearch(using=self.es_client, index=index_name)
+            s = s.filter('term', uuid=str(doc_id))
+            response = await s.execute()
+            film = response.hits.hits[0]['_source']
+            return film
+        except IndexError:
             return None
+        except Exception as e:
+            print(f'Error in get: {e}')
+            raise e
+
+
+
+
+    async def get(self, index_name: str, obj_in: dict[str, Any]) -> list[Hit] | None:
+        """Get item by fields - exact match."""
+
+        # For the 'title' field: it is additionally possible to search for an exact match
+        # (but field name must be different: 'title.raw')
+        if 'title' in obj_in:
+            obj_in['title.raw'] = obj_in.pop('title')
+            # new_key = 'username'
+            # obj_in = {new_key if key == 'user' else key: value for key, value in obj_in.items()}
+            # obj_in['title'] = obj
+
+
+
+        try:
+            # async_connections.create_connection(hosts=es_settings.es_url, timeout=20)
+            # s = AsyncSearch(using=self.es_client, index=index_name)
+            # s = AsyncSearch(using=self.es_client, index=index_name).filter('term', title=obj_in['title'])
+            s = AsyncSearch(using=self.es_client, index=index_name)
+            # s = AsyncSearch(using=self.es_client, index=index_name).filter('term', uuid='96c5ff26-b615-408a-a144-137664907c48')
+            s = s.filter('term', **obj_in)
+            # TODO This is redundant for one field (title), but it is useful for searching through all fields for another endpoint.
+            # Option: To make this method universal, which is accessed from different endpoits (and as a result, service funcs)
+            for field, value in obj_in.items():
+                s = s.filter('term', **{field: value})
+
+            total = await s.count()
+            print(f'{total=}')
+            # s.query('match', title=obj_in['title'])
+            # for field, value in obj_in.items():
+            #     # s = s.filter('term', **{field: value})
+            #     s.filter('term', **{field: value})
+            # print(s)
+            # s.execute()
+            # results = [hit for hit in s]
+
+
+
+            results = [hit async for hit in s]
+            print(f'base_serv: {len(results)=}')
+            results_titles = [hit.title async for hit in s]
+            print(f'base_serv: {results_titles=}')
+
+            async for hit in s:
+                print(f'base_serv: {hit.title=}')
+
+            return results
+
+            # doc = await self.es_client.get(index=index_name, id=str(doc_id))
+            # item = doc['_source']
+            # print(f'bs->{type(item)=}')
+            # return item
+        except IndexError:
+            return None
+        except Exception as e:
+            print(f'Error in get: {e}')
+            raise e
 
     # async def get(self, index_name: str, doc_id: UUID) -> dict | None:
     #     """Get item by id (uuid)."""
