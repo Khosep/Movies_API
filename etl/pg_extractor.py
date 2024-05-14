@@ -26,12 +26,13 @@ class PostgresExtractor:
 
             while results := self.cur.fetchmany(size=self.chunk_size):
                 total_data = dict(index_name=index_name, data=results)
-                self._logger.debug(f'Extracted list of data with len={len(results)} sent')
+                self._logger.info(f'Extracted list of data with len={len(results)} sent for "{index_name}"')
                 next_node.send(total_data)
 
     def _get_sql_query(self, index_name: str) -> str:
         sql_file = pathlib.Path(etl_settings.sql_dir, es_settings.sql_files[index_name])
         with open(sql_file, 'r') as file:
             sql_query = file.read()
+            self._logger.info(f'get sql_query for "{index_name}"')
             self._logger.debug(f'{sql_query=}')
         return sql_query

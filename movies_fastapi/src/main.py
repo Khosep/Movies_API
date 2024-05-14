@@ -59,6 +59,7 @@ app = FastAPI(
 
 app.include_router(base_api.router, tags=[app_settings.tag_service])
 app.include_router(film_api.router, prefix=app_settings.prefix + '/films', tags=[app_settings.tag_films])
+app.include_router(person_api.router, prefix=app_settings.prefix + '/persons', tags=[app_settings.tag_persons])
 # app.include_router(health_api.router, prefix=app_settings.prefix)
 # app.include_router(file_api.router, prefix=app_settings.prefix + '/files')
 

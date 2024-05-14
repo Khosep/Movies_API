@@ -13,7 +13,7 @@ class FilmBase(BaseModel):
 
 class FilmDetails(FilmBase):
     description: str | None
-    genre: list[GenreBase]
+    genres: list[GenreBase]
     actors: list[PersonBase]
     writers: list[PersonBase]
     directors: list[PersonBase]

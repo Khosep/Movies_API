@@ -12,27 +12,28 @@ from .schemas.query_params import SearchParam
 
 router = APIRouter()
 
-# TODO [Optional]
+# TODO full_name ('text' and 'raw keyword')
 # Get persons for certain film (search by film title)
 
-@router.get('/{film_title}',
-            response_model=list[FilmDetails],
-            summary='Films by its title',
-            description='Full information about the film by its title',
+@router.get('/{person_full_name}',
+            # TODO Добавить PersonDetails
+            response_model=list[PersonDetails],
+            summary='Persons by full_name',
+            description='Full information about person by full_name',
             )
-async def film_details(
-        film_title: str,
+async def person_details(
+        full_name: str,
         film_service: Annotated[FilmService, Depends(get_film_service)],
         request: Request
 ) -> list[FilmDetails]:
 
-    films = await film_service.get_film_by_title(film_title, request)
-    print(f'f_api: {films=}')
+    persons = await person_service.get_person_by_name(full_name, request)
+    print(f'f_api: {persons=}')
     print(f'f_api: {request.url=}')
-    if not films:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Film not found')
+    if not persons:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Person not found')
 
-    return films
+    return persons
 
 # @router.get('/{film_id}',
 #             response_model=FilmDetails,

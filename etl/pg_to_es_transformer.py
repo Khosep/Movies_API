@@ -59,7 +59,7 @@ class PostgresToElasticsearchTransformer:
                 title=movie_in.title,
                 imdb_rating=movie_in.rating,
                 description=movie_in.description,
-                genre=[{'uuid': g.id, 'name': g.name} for g in movie_in.genres],
+                genres=[{'uuid': g.id, 'name': g.name} for g in movie_in.genres],
                 actors=[{'uuid': a.id, 'full_name': a.full_name} for a in movie_in.actors],
                 writers=[{'uuid': w.id, 'full_name': w.full_name} for w in movie_in.writers],
                 directors=[{'uuid': d.id, 'full_name': d.full_name} for d in movie_in.directors],
@@ -123,6 +123,11 @@ class PostgresToElasticsearchTransformer:
     def __transform_person_films(films_in: list[PGPersonFilms]) -> list[ESPersonFilms]:
         films_data = []
         for f in films_in:
-            f_data = ESPersonFilms(uuid=f.film_work_id, roles=f.roles)
+            f_data = ESPersonFilms(
+                uuid=f.film_work_id,
+                title=f.title,
+                imdb_rating=f.rating,
+                roles=f.roles,
+            )
             films_data.append(f_data)
         return films_data

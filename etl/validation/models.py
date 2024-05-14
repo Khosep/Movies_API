@@ -47,6 +47,8 @@ class PGPersonFilms(BaseModel):
     """Films used for PGPerson"""
     model_config = ConfigDict(use_enum_values=True)
     film_work_id: uuid.UUID
+    title: str
+    rating: float | None
     roles: list[RoleEnum]
 
 
@@ -74,7 +76,7 @@ class ESMovie(BaseModel):
     title: str
     imdb_rating: float | None
     description: str | None
-    genre: list[ESMovieGenre] = Field(default_factory=list)
+    genres: list[ESMovieGenre] = Field(default_factory=list)
     actors: list[ESMoviePerson] = Field(default_factory=list)
     writers: list[ESMoviePerson] = Field(default_factory=list)
     directors: list[ESMoviePerson] = Field(default_factory=list)
@@ -89,6 +91,8 @@ class ESGenre(BaseModel):
 class ESPersonFilms(BaseModel):
     """Films used for ESPerson"""
     model_config = ConfigDict(use_enum_values=True)
+    title: str
+    imdb_rating: float | None
     uuid: uuid.UUID
     roles: list[RoleEnum]
 
