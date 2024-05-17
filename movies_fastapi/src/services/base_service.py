@@ -1,16 +1,18 @@
 import logging.config
 from abc import ABC, abstractmethod
-from typing import Any
+from typing import Any, TypeVar, Generic
 from uuid import UUID
 
 import orjson
 from elasticsearch import NotFoundError, AsyncElasticsearch
-from elasticsearch_dsl import Search, Q, AsyncSearch, async_connections
+from elasticsearch_dsl import Search, Q, AsyncSearch, async_connections, Index
 from elasticsearch_dsl.query import MultiMatch, Match
 from elasticsearch_dsl.response import Hit
 from fastapi import Request
+from pydantic import BaseModel
 from redis.asyncio import Redis
 
+from api.v1.schemas.film_schema import FilmQueryExact
 from api.v1.schemas.query_params import SearchParam
 from core.config import app_settings, redis_settings, es_settings
 from core.exeptions import ElasticsearchError
@@ -30,15 +32,15 @@ class DBService(ABC):
     async def get_list(self, *args, **kwargs):
         raise NotImplementedError
 
+GetSchemaType = TypeVar("GetSchemaType", bound=BaseModel)
 
-class ElasticsearchDBService(DBService):
+class ElasticsearchDBService(DBService, Generic[GetSchemaType]):
     def __init__(self, es_client: AsyncElasticsearch):
         self.es_client = es_client
 
     # TODO Delete Sample from official documentation
     # from elasticsearch_dsl import AsyncSearch
-    # https://www.tipoit.kz/elk-bool-query
-    # https://elasticsearch-dsl.readthedocs.io/en/latest/search_dsl.html
+
 
     # async_connections.create_connection('conn1', hosts=es_settings.es_url, timeout=20)
     # doc = await self.es_client.get(index=index_name, id=str(doc_id))
@@ -70,14 +72,15 @@ class ElasticsearchDBService(DBService):
     #     return item
 
 
-    async def get_by_uuid(self, index_name: str, doc_id: UUID):
+    async def get_by_id(self, index_name: str, doc_id: UUID):
 
         try:
             s = AsyncSearch(using=self.es_client, index=index_name)
             s = s.filter('term', uuid=str(doc_id))
             response = await s.execute()
-            film = response.hits.hits[0]['_source']
-            return film
+            result = response.hits.hits[0]['_source']
+            print(f'get_by_uuid: {type(result)=}')
+            return result
         except IndexError:
             return None
         except Exception as e:
@@ -85,59 +88,32 @@ class ElasticsearchDBService(DBService):
             raise e
 
 
-
-
-    async def get(self, index_name: str, obj_in: dict[str, Any]) -> list[Hit] | None:
+    async def get(self, index_name: str, obj_in: GetSchemaType) -> list[Hit] | None:
         """Get item by fields - exact match."""
 
-        # For the 'title' field: it is additionally possible to search for an exact match
-        # (but field name must be different: 'title.raw')
-        if 'title' in obj_in:
-            obj_in['title.raw'] = obj_in.pop('title')
-            # new_key = 'username'
-            # obj_in = {new_key if key == 'user' else key: value for key, value in obj_in.items()}
-            # obj_in['title'] = obj
-
-
-
+        proper_obj_in = await self._transform_fields(index_name, obj_in)
+        print(f' bs:{proper_obj_in=}')
         try:
-            # async_connections.create_connection(hosts=es_settings.es_url, timeout=20)
-            # s = AsyncSearch(using=self.es_client, index=index_name)
-            # s = AsyncSearch(using=self.es_client, index=index_name).filter('term', title=obj_in['title'])
             s = AsyncSearch(using=self.es_client, index=index_name)
-            # s = AsyncSearch(using=self.es_client, index=index_name).filter('term', uuid='96c5ff26-b615-408a-a144-137664907c48')
-            s = s.filter('term', **obj_in)
-            # TODO This is redundant for one field (title), but it is useful for searching through all fields for another endpoint.
             # Option: To make this method universal, which is accessed from different endpoits (and as a result, service funcs)
-            for field, value in obj_in.items():
+            for field, value in proper_obj_in.items():
                 s = s.filter('term', **{field: value})
 
+            # TODO Delete
             total = await s.count()
-            print(f'{total=}')
-            # s.query('match', title=obj_in['title'])
-            # for field, value in obj_in.items():
-            #     # s = s.filter('term', **{field: value})
-            #     s.filter('term', **{field: value})
-            # print(s)
-            # s.execute()
-            # results = [hit for hit in s]
-
-
+            print(f' bs:{total=}')
 
             results = [hit async for hit in s]
+
+            #TODO Delete
             print(f'base_serv: {len(results)=}')
+            print(f'base_serv: {results=}')
             results_titles = [hit.title async for hit in s]
             print(f'base_serv: {results_titles=}')
-
             async for hit in s:
                 print(f'base_serv: {hit.title=}')
 
             return results
-
-            # doc = await self.es_client.get(index=index_name, id=str(doc_id))
-            # item = doc['_source']
-            # print(f'bs->{type(item)=}')
-            # return item
         except IndexError:
             return None
         except Exception as e:
@@ -155,6 +131,60 @@ class ElasticsearchDBService(DBService):
     #
     #     except NotFoundError:
     #         return None
+
+    async def _transform_fields(self, index_name: str, data: GetSchemaType) -> dict[str, Any]:
+        """Transform fields that can have an exact search in their raw form"""
+        # For the 'title' field: it is additionally possible to search for an exact match
+        # (but field name must be different: 'title.raw')
+
+        proper_data = data.model_dump(exclude_none=True)
+        field_names = list(proper_data.keys())
+
+        # get mapping from index
+        indx = Index(index_name, using=self.es_client)
+        mapping = await indx.get_mapping()
+        field_mapping = mapping[index_name]['mappings']['properties']
+        raw_pattern = {'raw': {'type': 'keyword'}}
+
+        # change name of field (adding ".raw" if field has "keyword") for search purposes
+        for field in field_names:
+            fm_field = field_mapping[field]
+            match fm_field:
+                case {'type': 'text', 'fields': raw_pattern}:
+                    proper_data[f'{field}.raw'] = proper_data.pop(field)
+        return proper_data
+
+
+
+
+
+
+
+
+        # field_mapping = [mapping[index_name]['mappings']['properties'][field] for field in field_names]
+
+        # print(f' bs:{field_mapping=}')
+        # # print(f' bs:{mapping0[index_name]["mappings"]["properties"]=}')
+        # f_mapping = await indx.get_field_mapping(fields=[field_names])
+        # print(f' bs:{f_mapping=}')
+        # # f1_mapping0 = await indx.get_field_mapping(fields=['title'])
+        # # print(f' bs:{f1_mapping0=}')
+        #
+        # mapping1 = await self.es_client.indices.get_mapping(index=index_name)
+        # print(f' bs:{mapping1=}')
+        # # TODO hardcode (requires a loop (obj_in.keys())
+        # # field_names = ['uuid', 'title', 'imdb_rating', 'genres', 'actors']
+        # for field in field_names:
+        #     # field_name = 'title'
+        #     field_mapping = mapping1[index_name]['mappings']['properties'][field]
+        #     print(f'---bs:{field} --> {field_mapping=}')
+        #
+        # f_mapping2 = await self.es_client.indices.get_field_mapping(index=index_name, fields=[field_names])
+        # print(f' bs:{f_mapping2=}')
+        # f1_mapping3 = await self.es_client.indices.get_field_mapping(index=index_name, fields=['title'])
+        # print(f' bs:{f1_mapping3=}')
+
+
 
     async def get_list(self, index_name: str, query_params: SearchParam) -> list[dict] | None:
         """Get list of items by search."""

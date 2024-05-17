@@ -4,8 +4,10 @@ from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, status, Depends, Request
 
+from services.person_service import PersonService, get_person_service
 from .schemas.film_schema import FilmBase, FilmDetails
 from services.film_service import FilmService, get_film_service
+from .schemas.person_schema import PersonDetails
 from .schemas.query_params import SearchParam
 
 # from services.film_service import FilmService, get_film_service
@@ -23,11 +25,11 @@ router = APIRouter()
             )
 async def person_details(
         full_name: str,
-        film_service: Annotated[FilmService, Depends(get_film_service)],
+        person_service: Annotated[PersonService, Depends(get_person_service)],
         request: Request
-) -> list[FilmDetails]:
+) -> list[PersonDetails]:
 
-    persons = await person_service.get_person_by_name(full_name, request)
+    persons = await person_service.get_person_by_fields(full_name, request)
     print(f'f_api: {persons=}')
     print(f'f_api: {request.url=}')
     if not persons:
