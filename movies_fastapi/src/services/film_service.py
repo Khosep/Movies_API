@@ -33,13 +33,10 @@ class FilmService:
         films = await self.es_service.get_exact_match(self.index_name, film_data)
         return films
 
-    # TODO Redo it
     async def get_films_by_search(self, query_params: FilmTotalParam) -> list[FilmDetails] | None:
+        #TODO Delete
         # https://www.tipoit.kz/elk-bool-query
         # https://elasticsearch-dsl.readthedocs.io/en/latest/search_dsl.html
-        #TODO Page processing logic is needed
-
-        #TODO all query_params?
         films = await self.es_service.get_list(self.index_name, query_params)
 
         return films if films else None

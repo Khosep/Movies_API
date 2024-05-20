@@ -105,9 +105,9 @@ async def film_search(
         query_params: Annotated[FilmTotalParam, Depends()],
         # sort_and_filter_params: Annotated[FilmListParam, Depends()],
 ) -> list[FilmDetails]:
-    #TODO Реализовать
     films = await film_service.get_films_by_search(query_params)
     if not films:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Films not found')
 
-    return [FilmDetails(**film) for film in films]
+    return films
+    # return [FilmDetails(**film) for film in films]

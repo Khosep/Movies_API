@@ -17,7 +17,7 @@ router = APIRouter()
 # TODO full_name ('text' and 'raw keyword')
 # Get persons for certain film (search by film title)
 
-@router.get('/{person_id}',
+@router.get('/exact_search/{person_id}',
             response_model=PersonDetails,
             summary='Get person information (exact match)',
             description='Get full information about person by its uuid',
@@ -34,7 +34,7 @@ async def person_details(
     return person
 
 
-@router.get('/name/{full_name}',
+@router.get('/exact_search/name/{full_name}',
             response_model=list[PersonDetails],
             summary='Get person/s (exact match)',
             description='Get full information about person/s by full_name',
@@ -68,20 +68,17 @@ async def person_by_name(
 
 
 
-# TODO Implement it if necessary
 @router.get('/search',
-            response_model=list[FilmBase],
-            summary='Film search',
-            description='Search for films based on the words from the title',
+            response_model=list[PersonDetails],
+            summary='Person fuzzy search',
+            description='Search for persons based on the words from the full name',
             )
 async def film_search(
-        film_service: Annotated[FilmService, Depends(get_film_service)],
+        person_service: Annotated[PersonService, Depends(get_person_service)],
         query_params: Annotated[SearchParam, Depends()],
-        request: Request
-) -> list[FilmBase]:
-    #TODO Реализовать
-    films = await film_service.get_films_by_search(query_params, request)
-    if not films:
+) -> list[PersonDetails]:
+    persons = await person_service.get_persons_by_search(query_params)
+    if not persons:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Films not found')
 
-    return [FilmBase(**film) for film in films]
+    return persons

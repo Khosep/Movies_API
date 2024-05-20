@@ -9,7 +9,7 @@ from elasticsearch_dsl import Q, AsyncSearch, Index
 from pydantic import BaseModel
 from redis.asyncio import Redis
 
-from core.config import redis_settings
+from core.config import redis_settings, es_settings
 from core.logger import LOGGING
 from core.utils import cache
 
@@ -100,19 +100,21 @@ class ElasticsearchDBService(DBService, Generic[GetSchemaType]):
         return proper_data
 
     @cache
-    async def get_list(self, index_name: str, query_params: QueryParamsSchemaType) -> list[dict] | None:
+    async def get_list(self, index_name: str, query_params: QueryParamsSchemaType) -> list[dict]:
         """Get list of items by search."""
 
         s = AsyncSearch(using=self.es_client, index=index_name)
 
         if query_params.query:
-            query = Q("match", title=query_params.query)
+            serch_params = {es_settings.es_indexes[index_name]['search_fields'][0]: query_params.query}
+            query = Q("match", **serch_params)
             s = s.query(query)
 
-        if query_params.sort:
+        # s = s.sort('_score') # sort by relevance (by default, it seems like it should be)
+        if 'sort' in query_params.model_fields and query_params.sort is not None:
             s = s.sort(query_params.sort)
 
-        if query_params.genre_name:
+        if 'genre_name' in query_params.model_fields and query_params.genre_name is not None:
             # filter_query = Q('terms', genres=query_params.genre)
             filter_query = Q('nested', path='genres', query=Q('match', genres__name=query_params.genre_name))
 

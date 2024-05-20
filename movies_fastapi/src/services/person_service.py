@@ -33,21 +33,10 @@ class PersonService:
         persons = await self.es_service.get_exact_match(self.index_name, obj_in)
         return persons
 
-    async def get_persons_by_search(self, query_params: SearchParam, request: Request) -> FilmDetails | None:
-        # TODO Page processing logic is needed
+    async def get_persons_by_search(self, query_params: SearchParam) -> list[PersonDetails] | None:
+        persons = await self.es_service.get_list(self.index_name, query_params)
 
-        # retrieve data from redis cache if exists
-        if film := await self.redis_service.retrieve_from_cache(request):
-            return film
-
-        # TODO all query_params?
-        # retrieve data from elastic
-        films = await self.es_service.get_list(self.index_name, query_params)
-
-        # add data to redis cache
-        await self.redis_service.add_to_cache(request, films)
-
-        return films if films else None
+        return persons if persons else None
 
 
 @lru_cache()

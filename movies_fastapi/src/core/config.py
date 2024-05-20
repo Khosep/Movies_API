@@ -32,13 +32,6 @@ class ESSettings(BaseSettings):
     es_port: int = ...
     es_protocol: str = 'http'
 
-    #TODO Delete
-    # es_index_names: dict[str, str] = {
-    #     'movies': 'movies',
-    #     'genres': 'genres',
-    #     'persons': 'persons',
-    # }
-
     # tuple: (index_name, search_fields)
     es_index_names: dict[str, tuple] = {
         'movies': ('movies', ['title']),

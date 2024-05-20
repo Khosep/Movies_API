@@ -37,6 +37,6 @@ def load_from_sqlite(connection: sqlite3.Connection, pg_connection: _connection)
 
 
 if __name__ == '__main__':
-    with conn_context_sqlite(app_settings.sqlite_db_path) as sqlite_conn:
+    with conn_context_sqlite(app_settings.sqlite_ru_db_path) as sqlite_conn:
         with conn_context_psycopg(app_postgres_settings.pg_dsn) as pg_conn:
             load_from_sqlite(sqlite_conn, pg_conn)

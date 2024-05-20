@@ -40,6 +40,7 @@ class AppPostgresSettings(BaseSettings):
 class AppSettings(BaseSettings):
     model_config = SettingsConfigDict(env_file=ENV_PATH, env_file_encoding='utf-8', extra='ignore')
     sqlite_db_path: pathlib.Path = pathlib.Path(BASE_DIR, 'db.sqlite')
+    sqlite_ru_db_path: pathlib.Path = pathlib.Path(BASE_DIR, 'ru_db.sqlite')
     csv_tables_path: pathlib.Path = Field('csv_tables',
                                           default_factory=create_dir_if_not_exists(pathlib.Path('csv_tables')))
     delimiter: str = ';'
