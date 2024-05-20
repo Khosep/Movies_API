@@ -9,15 +9,13 @@ class RoleEnum(enum.Enum):
     writer = 'writer'
     director = 'director'
 
+class PersonName(BaseModel):
+    full_name: str
 
 class PersonBase(BaseModel):
     uuid: UUID
     full_name: str
 
-
-# TODO If it fails to be inherited due to cross-imports, then specify the fields explicitly
-# class PersonFilms(FilmBase):
-#     roles: list[RoleEnum]
 
 class PersonFilms(BaseModel):
     uuid: UUID
@@ -27,4 +25,4 @@ class PersonFilms(BaseModel):
 
 
 class PersonDetails(PersonBase):
-    films: PersonFilms
+    films: list[PersonFilms]

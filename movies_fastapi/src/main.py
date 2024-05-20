@@ -16,7 +16,6 @@ from db import redis
 async def lifespan(app: FastAPI):
     # Startup
     redis.redis = Redis.from_url(redis_settings.redis_url)
-    print(redis.redis)
     elastic.es = AsyncElasticsearch(es_settings.es_url)
     yield
     # Clean up the ML models and release the resources

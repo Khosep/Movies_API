@@ -1,12 +1,17 @@
 import pathlib
+from enum import Enum
 
 from pydantic import PostgresDsn, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
-
 from utils import create_dir_if_not_exists
 
 BASE_DIR = pathlib.Path(__file__).resolve().parent
 ENV_PATH = pathlib.Path(BASE_DIR.parent, '.env')
+
+
+class InsertToPGMethod(str, Enum):
+    INSERT = 'INSERT'
+    COPY = 'COPY'
 
 
 class AppPostgresSettings(BaseSettings):
@@ -43,7 +48,3 @@ class AppSettings(BaseSettings):
 
 app_settings = AppSettings()
 app_postgres_settings = AppPostgresSettings()
-
-
-
-

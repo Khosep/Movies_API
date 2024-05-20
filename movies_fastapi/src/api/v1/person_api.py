@@ -17,47 +17,40 @@ router = APIRouter()
 # TODO full_name ('text' and 'raw keyword')
 # Get persons for certain film (search by film title)
 
-@router.get('/{person_full_name}',
-            # TODO Добавить PersonDetails
-            response_model=list[PersonDetails],
-            summary='Persons by full_name',
-            description='Full information about person by full_name',
+@router.get('/{person_id}',
+            response_model=PersonDetails,
+            summary='Get person information (exact match)',
+            description='Get full information about person by its uuid',
             )
 async def person_details(
+        person_id: UUID,
+        person_service: Annotated[PersonService, Depends(get_person_service)],
+) -> PersonDetails:
+
+    person = await person_service.get_person_by_uuid(person_id)
+    if not person:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Person not found')
+
+    return person
+
+
+@router.get('/name/{full_name}',
+            response_model=list[PersonDetails],
+            summary='Get person/s (exact match)',
+            description='Get full information about person/s by full_name',
+            )
+async def person_by_name(
         full_name: str,
         person_service: Annotated[PersonService, Depends(get_person_service)],
-        request: Request
 ) -> list[PersonDetails]:
 
-    persons = await person_service.get_person_by_fields(full_name, request)
-    print(f'f_api: {persons=}')
-    print(f'f_api: {request.url=}')
+    persons = await person_service.get_person_by_name(full_name)
     if not persons:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Person not found')
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Persons not found')
 
     return persons
 
-# @router.get('/{film_id}',
-#             response_model=FilmDetails,
-#             summary='Film information',
-#             description='Full information about the film by its uuid',
-#             )
-# async def film_details(
-#         film_id: UUID,
-#         film_service: Annotated[FilmService, Depends(get_film_service)],
-#         request: Request
-# ) -> FilmDetails:
-#
-#     film = await film_service.get_film_by_uuid(film_id, request)
-#     if not film:
-#         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Film not found')
-#
-#     return film
-
-
-
-
-
+# TODO Implement
 # @router.get('',
 #             response_model=list[FilmBase],
 #             summary='List of films',
@@ -67,7 +60,6 @@ async def person_details(
 #         film_service: Annotated[FilmService, Depends(get_film_service)],
 #         query_params: Annotated[FilmListParams, Depends()]
 # ) -> list[FilmBase]:
-#     #TODO Реализовать
 #     films = await film_service.get_list(query_params)
 #     if not films:
 #         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Films not found')
@@ -76,7 +68,7 @@ async def person_details(
 
 
 
-
+# TODO Implement it if necessary
 @router.get('/search',
             response_model=list[FilmBase],
             summary='Film search',

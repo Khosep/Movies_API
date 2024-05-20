@@ -30,10 +30,12 @@ class FilmListParam(PageParam):
     model_config = ConfigDict(use_enum_values=True)
 
     sort: Annotated[SortRating | None, Query(SortRating.DESC.value, description='Поле сортировки')]
-    genre: Annotated[UUID | None, Query(None, description='Фильтрация по жанру')]
+    genre_name: Annotated[str | None, Query(None, description='Фильтрация по жанру')]
+    # genre: Annotated[UUID | None, Query(None, description='Фильтрация по жанру')]
 
 
 class SearchParam(PageParam):
     query: Annotated[str | None, Query(..., description='Строка запроса для поиска фильмов')]
 
-
+class FilmTotalParam(SearchParam, FilmListParam):
+    pass
