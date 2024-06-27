@@ -24,6 +24,8 @@ class AppSettings(BaseSettings):
     tag_genres: str = 'Genres'
     tag_persons: str = 'Persons'
 
+    page_size: int = 20
+
 
 class ESSettings(BaseSettings):
     model_config = SettingsConfigDict(env_file=ENV_PATH, env_file_encoding='utf-8', extra='ignore')
@@ -31,13 +33,6 @@ class ESSettings(BaseSettings):
     es_host: str = ...
     es_port: int = ...
     es_protocol: str = 'http'
-
-    #TODO Delete
-    # es_index_names: dict[str, str] = {
-    #     'movies': 'movies',
-    #     'genres': 'genres',
-    #     'persons': 'persons',
-    # }
 
     # tuple: (index_name, search_fields)
     es_index_names: dict[str, tuple] = {
@@ -71,8 +66,3 @@ class RedisSettings(BaseSettings):
 app_settings = AppSettings()
 es_settings = ESSettings()
 redis_settings = RedisSettings()
-
-index_name = es_settings.es_indexes['movies']['index_name']
-index_name = es_settings.es_indexes['movies']['search_fields']
-print(index_name)
-# print(*es_settings.es_index_names['movies'].keys())

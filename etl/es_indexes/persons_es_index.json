@@ -61,6 +61,12 @@
           "uuid": {
             "type": "keyword"
           },
+          "title": {
+            "type": "keyword"
+          },
+          "imdb_rating": {
+            "type": "float"
+          },
           "roles": {
             "type": "keyword"
           }

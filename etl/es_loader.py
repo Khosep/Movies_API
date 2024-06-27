@@ -40,7 +40,8 @@ class ElasticsearchLoader:
             index_name = total_data_in['index_name']
             data = total_data_in['data']
             last_updated = total_data_in['last_updated']
-            self._logger.info(f'Got {len(data)} data with latest timestamp={last_updated}')
+            self._logger.info(f'Got {len(data)} data for "{index_name}" with latest timestamp={last_updated}')
+            self._logger.info(f'First item from data: {data[0]}')
 
             actions = [{
                 '_index': index_name,

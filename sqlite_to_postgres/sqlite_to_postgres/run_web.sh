@@ -5,10 +5,12 @@ set -e
 echo "Waiting for db..."
 while ! nc -z $POSTGRES_HOST $POSTGRES_PORT; do
       sleep 0.5
-      echo "Sleep..."
+      echo "Sleeping..."
 done
 
-echo "load_data..."
+echo "Loading data..."
 python load_data.py
+
+echo "Loading finished"
 
 

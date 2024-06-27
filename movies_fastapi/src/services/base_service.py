@@ -1,17 +1,17 @@
 import logging.config
 from abc import ABC, abstractmethod
+from typing import Any, TypeVar, Generic
 from uuid import UUID
 
 import orjson
-from elasticsearch import NotFoundError, AsyncElasticsearch
-from elasticsearch_dsl import Search, Q
-from fastapi import Request
+from elasticsearch import AsyncElasticsearch
+from elasticsearch_dsl import Q, AsyncSearch, Index
+from pydantic import BaseModel
 from redis.asyncio import Redis
 
-from src.api.v1.schemas.query_params import SearchParam
-from src.core.config import app_settings, redis_settings, es_settings
-from src.core.exeptions import ElasticsearchError
-from src.core.logger import LOGGING
+from core.config import redis_settings, es_settings
+from core.logger import LOGGING
+from core.utils import cache
 
 logging.config.dictConfig(LOGGING)
 logger = logging.getLogger(__name__)
@@ -20,7 +20,11 @@ logger = logging.getLogger(__name__)
 class DBService(ABC):
 
     @abstractmethod
-    async def get(self, *args, **kwargs):
+    async def get_by_id(self, *args, **kwargs):
+        raise NotImplementedError
+
+    @abstractmethod
+    async def get_exact_match(self, *args, **kwargs):
         raise NotImplementedError
 
     @abstractmethod
@@ -28,132 +32,105 @@ class DBService(ABC):
         raise NotImplementedError
 
 
-class ElasticsearchDBService(DBService):
-    def __init__(self, es_client: AsyncElasticsearch):
-        self.es_client = es_client
+GetSchemaType = TypeVar("GetSchemaType", bound=BaseModel)
+QueryParamsSchemaType = TypeVar("QueryParamsSchemaType", bound=BaseModel)
 
-    async def get(self, index_name: str, doc_id: UUID) -> dict | None:
-        """Get item by id (uuid)."""
+
+class ElasticsearchDBService(DBService, Generic[GetSchemaType]):
+    def __init__(self, es_client: AsyncElasticsearch, redis: Redis):
+        self.es_client = es_client
+        self.cache_service = RedisCacheService(redis)   # Used in the 'cache' decorator
+
+    @cache
+    async def get_by_id(self, index_name: str, doc_id: UUID) -> dict[str, Any] | None:
 
         try:
-            doc = await self.es_client.get(index=index_name, id=str(doc_id))
-            item = doc['_source']
-            print(f'bs->{type(item)=}')
-            return item
-
-        except NotFoundError:
+            s = AsyncSearch(using=self.es_client, index=index_name)
+            s = s.filter('term', uuid=str(doc_id))
+            response = await s.execute()
+            doc = response.hits.hits[0]['_source'].to_dict()
+            return doc
+        except IndexError:
             return None
+        except Exception as e:
+            print(f'Error in get: {e}')
+            raise e
 
-    async def get_list(self, index_name: str, query_params: SearchParam) -> list[dict] | None:
+    @cache
+    async def get_exact_match(self, index_name: str, obj_in: GetSchemaType) -> list[dict[str, Any]] | None:
+        """Get item by fields - exact match."""
+
+        proper_obj_in = await self._transform_fields(index_name, obj_in)
+        try:
+            s = AsyncSearch(using=self.es_client, index=index_name)
+            for field, value in proper_obj_in.items():
+                s = s.filter('term', **{field: value})
+            total_found = await s.count()  # For informational purposes only
+            logger.info('{} documents found'.format(total_found))
+
+            docs = [hit.to_dict() async for hit in s]
+            logger.info('{} documents to response'.format(len(docs)))
+            return docs
+        except IndexError:
+            return None
+        except Exception as e:
+            print(f'Error in get: {e}')
+            raise e
+
+    async def _transform_fields(self, index_name: str, data: GetSchemaType) -> dict[str, Any]:
+        """Transform fields that can have an exact search in their raw form"""
+        # For the 'title' field: it is additionally possible to search for an exact match
+        # (but field name must be different: 'title.raw')
+
+        proper_data = data.model_dump(exclude_none=True)
+        field_names = list(proper_data.keys())
+
+        # get mapping from index
+        indx = Index(index_name, using=self.es_client)
+        mapping = await indx.get_mapping()
+        field_mapping = mapping[index_name]['mappings']['properties']
+        raw_pattern = {'raw': {'type': 'keyword'}}
+
+        # change name of field (adding ".raw" if field has "keyword") for search purposes
+        for field in field_names:
+            fm_field = field_mapping[field]
+            match fm_field:
+                case {'type': 'text', 'fields': raw_pattern}:
+                    proper_data[f'{field}.raw'] = proper_data.pop(field)
+        return proper_data
+
+    @cache
+    async def get_list(self, index_name: str, query_params: QueryParamsSchemaType) -> list[dict]:
         """Get list of items by search."""
 
-        if query_params.query:
-            search_query = self._get_search_query(index_name, query_params)
+        s = AsyncSearch(using=self.es_client, index=index_name)
 
-            body = self._get_es_query(query_params)
+        if 'query' in query_params.model_fields:
+            search_params = {es_settings.es_indexes[index_name]['search_fields'][0]: query_params.query}
+            query = Q("match", **search_params)
+            s = s.query(query)
 
-            try:
-                search_result = await self.es_client.search(
-                    index=index_name,
-                    body=body,
-                )
-                # TODO DELETE
-                # docs = [model_class(**doc["_source"]) for doc in search_result["hits"]["hits"]]
-                print(f'"{query}": {search_result=}')
-                print(f'\n {search_result["hits"]["hits"]=}')
-                docs = [doc["_source"] for doc in search_result["hits"]["hits"]]
-                print(f'\n{docs=}')
-                return docs
-            except ElasticsearchError as e:
-                logger.error(f"Ошибка Elasticsearch: {e}")
-                return None
+        # s = s.sort('_score') # sort by relevance (by default, it seems like it should be)
+        if 'sort' in query_params.model_fields and query_params.sort is not None:
+            s = s.sort(query_params.sort)
 
-    async def _get_search_query(self,
-                                index_name: str,
-                                query_params: SearchParam
-                                ):
-        s = Search(using=self.es_client).index(index_name)
-        # Define search fields
-        s = s.query('multi_match',
-                    query=query_params.query,
-                    fields=es_settings.es_indexes['movies']['search_fields'])
-        #TODO add pagination (sort and filter (genre) are not needed here) and fuzzy
+        if 'genre_name' in query_params.model_fields and query_params.genre_name is not None:
+            # filter_query = Q('terms', genres=query_params.genre)
+            filter_query = Q('nested', path='genres', query=Q('match', genres__name=query_params.genre_name))
 
-    async def _get_filter_and_sort_query(self,
-                                index_name: str,
-                                query_params: SearchParam
-                                ):
-        #TODO Но здесь не через Search (искать нечего - нужен только лист), а как?
-        s = Search(using=self.es_client)
+            s = s.filter(filter_query)  # equivalent: "s = s.query(filter_query)"
 
-        # Фильтр по жанрам
-        filter_query = Q('terms', genres=query_params.genre)
-        s = s.query(filter_query)
+        from_item = (query_params.page_number - 1) * query_params.page_size
+        s = s[from_item:query_params.page_number * query_params.page_size]
+        # s = s[from_=from_item, size=query_params.page_size]
 
-        # # Полнотекстовый поиск по названию книги
-        # s = s.query("multi_match", query=search_text, fields=["title"])
-        #
-        # # Выполняем поиск
-        # response = s.execute()
-        #
-        # # Обрабатываем результаты
-        # for hit in response:
-        #     # Обработка найденных документов
-        #     print(hit.title)
+        total_found = await s.count()  # For informational purposes only
+        logger.info('{} documents found'.format(total_found))
 
+        docs = [hit.to_dict() async for hit in s]
+        logger.info('{} documents to response'.format(len(docs)))
 
-
-
-
-
-    #TODO Remove
-    async def _get_es_query(self,
-                            query_params,
-                            matches: dict = None,
-                            bool_operator: str = 'should'
-                            ):
-        pass
-        # if query_params.sort:
-        #
-        #     sort = query_params.sort if query_params else ''
-        #
-        #
-        #
-        #
-        # body = {
-        #     'query': {
-        #         'match': {
-        #             'title': query_params.query
-        #         }
-        #     }
-        # }
-        #
-        # body = {
-        #     "query": {
-        #         "bool": {
-        #             "must": {
-        #                 "match": {
-        #                     "title": query_params.query
-        #                 }
-        #             }
-        #         }
-        #     }
-        # }
-        #
-        # if query_params.page_size:
-        #     body['size'] = query_params.page_size
-        #     body['from_'] = query_params.page_size * (query_params.page_number - 1)
-        #
-        # if query_params.sort:
-        #     body['sort'] = [
-        #         {
-        #             "imdb_rating": {
-        #                 "order": query_params.sort
-        #             }
-        #         }
-        #     ]
-
-
+        return docs
 
 
 class CacheService(ABC):
@@ -170,21 +147,20 @@ class CacheService(ABC):
 class RedisCacheService(CacheService):
     def __init__(self, redis_client: Redis):
         self.redis_client = redis_client
+        self.expiration_time_sec = redis_settings.redis_cache_expiration_time_sec
 
-    async def add_to_cache(self, request: Request, data: dict | list[dict]) -> None:
+    async def add_to_cache(self, key: str, data: dict | list[dict]) -> None:
         """Put data to cache."""
 
-        key = str(request.url)
         value = orjson.dumps(data)
         await self.redis_client.set(
             name=key,
             value=value,
-            ex=redis_settings.redis_cache_expiration_time_sec
+            ex=self.expiration_time_sec
         )
 
-    async def retrieve_from_cache(self, request: Request) -> list[dict] | None:
+    async def retrieve_from_cache(self, key: str) -> list[dict] | None:
         """Get data from cache."""
 
-        key = str(request.url)
         json_data = await self.redis_client.get(key)
         return orjson.loads(json_data) if json_data else None

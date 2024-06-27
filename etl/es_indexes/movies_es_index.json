@@ -61,7 +61,7 @@
         "type": "text",
         "analyzer": "ru_en"
       },
-      "genre": {
+      "genres": {
         "type": "nested",
         "dynamic": "strict",
         "properties": {
