@@ -1,16 +1,17 @@
-from http import HTTPStatus
-from typing import Annotated, Any
+from typing import Annotated
+from typing import Annotated
 from uuid import UUID
 
-from fastapi import APIRouter, HTTPException, status, Depends, Request, Query
+from fastapi import APIRouter, HTTPException, status, Depends
 
-from .schemas.film_schema import FilmBase, FilmDetails, FilmQueryExact
 from services.film_service import FilmService, get_film_service
-from .schemas.query_params import SearchParam, FilmListParam, FilmTotalParam
+from .schemas.film_schema import FilmBase, FilmDetails, FilmQueryExact
+from .schemas.query_params import FilmListParam, FilmTotalParam
 
 # from services.film_service import FilmService, get_film_service
 
 router = APIRouter()
+
 
 # TODO [Optional]
 # Get persons for certain film (search by film title)
@@ -24,29 +25,29 @@ async def film_details(
         film_id: UUID,
         film_service: Annotated[FilmService, Depends(get_film_service)],
 ) -> FilmDetails:
-
     film = await film_service.get_film_by_uuid(film_id)
     if not film:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Film not found')
 
     return film
 
+
 @router.post('/exact_search',
-            response_model=list[FilmDetails],
-            summary='Get films by their fields (exact match)',
-            description='Get full information about the films by their fields'
-                        ' (uuid, title, imdb_rating)',
-            )
+             response_model=list[FilmDetails],
+             summary='Get films by their fields (exact match)',
+             description='Get full information about the films by their fields'
+                         ' (uuid, title, imdb_rating)',
+             )
 async def film_by_fields(
         film_data: FilmQueryExact,
         film_service: Annotated[FilmService, Depends(get_film_service)],
 ) -> list[FilmDetails]:
-
     films = await film_service.get_film_by_fields(film_data)
     if not films:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Films not found')
 
     return films
+
 
 # TODO Problem: Validation for query params in Basemodel (film_schema.py) doesn't work properly: Error 500 instead of 422
 # To resolve:
@@ -71,30 +72,6 @@ async def film_by_fields(
 #     return films
 
 
-
-
-
-
-
-# @router.get('',
-#             response_model=list[FilmBase],
-#             summary='List of films',
-#             description='List of films with pagination, filtering by genre and sorting by rating',
-#             )
-# async def film_list(
-#         film_service: Annotated[FilmService, Depends(get_film_service)],
-#         query_params: Annotated[FilmListParams, Depends()]
-# ) -> list[FilmBase]:
-#     #TODO Реализовать
-#     films = await film_service.get_list(query_params)
-#     if not films:
-#         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Films not found')
-#     return [FilmBase(**film) for film in films]
-
-
-
-
-
 @router.get('/search',
             response_model=list[FilmDetails],
             summary='Film fuzzy search',
@@ -103,11 +80,24 @@ async def film_by_fields(
 async def film_search(
         film_service: Annotated[FilmService, Depends(get_film_service)],
         query_params: Annotated[FilmTotalParam, Depends()],
-        # sort_and_filter_params: Annotated[FilmListParam, Depends()],
 ) -> list[FilmDetails]:
     films = await film_service.get_films_by_search(query_params)
     if not films:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Films not found')
 
     return films
-    # return [FilmDetails(**film) for film in films]
+
+
+@router.get('',
+            response_model=list[FilmBase],
+            summary='List of films',
+            description='List of films with pagination, filtering by genre and sorting by rating',
+            )
+async def film_list(
+        film_service: Annotated[FilmService, Depends(get_film_service)],
+        query_params: Annotated[FilmListParam, Depends()],
+) -> list[FilmBase]:
+    films = await film_service.get_films_list(query_params)
+    if not films:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Films not found')
+    return films

@@ -39,7 +39,7 @@ QueryParamsSchemaType = TypeVar("QueryParamsSchemaType", bound=BaseModel)
 class ElasticsearchDBService(DBService, Generic[GetSchemaType]):
     def __init__(self, es_client: AsyncElasticsearch, redis: Redis):
         self.es_client = es_client
-        self.cache_service = RedisCacheService(redis)
+        self.cache_service = RedisCacheService(redis)   # Used in the 'cache' decorator
 
     @cache
     async def get_by_id(self, index_name: str, doc_id: UUID) -> dict[str, Any] | None:
@@ -105,9 +105,9 @@ class ElasticsearchDBService(DBService, Generic[GetSchemaType]):
 
         s = AsyncSearch(using=self.es_client, index=index_name)
 
-        if query_params.query:
-            serch_params = {es_settings.es_indexes[index_name]['search_fields'][0]: query_params.query}
-            query = Q("match", **serch_params)
+        if 'query' in query_params.model_fields:
+            search_params = {es_settings.es_indexes[index_name]['search_fields'][0]: query_params.query}
+            query = Q("match", **search_params)
             s = s.query(query)
 
         # s = s.sort('_score') # sort by relevance (by default, it seems like it should be)

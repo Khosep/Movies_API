@@ -6,7 +6,7 @@ from fastapi import FastAPI
 from fastapi.responses import ORJSONResponse
 from redis.asyncio import Redis
 
-from api.v1 import base_api, film_api, person_api
+from api.v1 import base_api, film_api, person_api, genre_api
 from core.config import app_settings, redis_settings, es_settings
 from db import elastic
 from db import redis
@@ -18,7 +18,7 @@ async def lifespan(app: FastAPI):
     redis.redis = Redis.from_url(redis_settings.redis_url)
     elastic.es = AsyncElasticsearch(es_settings.es_url)
     yield
-    # Clean up the ML models and release the resources
+    # Finish (clean up and release the resources)
     await redis.redis.close()
     await elastic.es.close()
 
@@ -40,6 +40,7 @@ app = FastAPI(
 app.include_router(base_api.router, tags=[app_settings.tag_service])
 app.include_router(film_api.router, prefix=app_settings.prefix + '/films', tags=[app_settings.tag_films])
 app.include_router(person_api.router, prefix=app_settings.prefix + '/persons', tags=[app_settings.tag_persons])
+app.include_router(genre_api.router, prefix=app_settings.prefix + '/genres', tags=[app_settings.tag_genres])
 
 if __name__ == '__main__':
     uvicorn.run(

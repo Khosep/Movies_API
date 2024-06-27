@@ -1,0 +1,53 @@
+version: '3'
+services:
+  db:
+    container_name: pg-movies
+    build:
+      context: ./elastic_db/sqlite_to_postgres/postgres
+    env_file:
+      - .env
+    ports:
+      - ${POSTGRES_PORT_OUT}:${POSTGRES_PORT}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: always
+    env_file:
+      - .env
+
+  load_data:
+    container_name: to-postgres
+    build:
+      context: ./elastic_db/sqlite_to_postgres/sqlite_to_postgres
+    env_file:
+      - .env
+    depends_on:
+      - db
+
+  elasticsearch:
+    image: elasticsearch:8.9.0
+    container_name: es-movies
+    ports:
+      - ${ES_PORT}:${ES_PORT}
+    restart: always
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - ingest.geoip.downloader.enabled=false
+    volumes:
+      - elastic_data:/usr/share/elasticsearch/data
+    env_file:
+      - .env
+
+  etl:
+    build: ./elastic_db/etl
+    container_name: etl-movies
+    restart: always
+    env_file: .env
+    depends_on:
+      - load_data
+      - elasticsearch
+
+volumes:
+  postgres_data:
+  elastic_data:

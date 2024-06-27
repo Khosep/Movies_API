@@ -18,7 +18,6 @@ from services.base_service import ElasticsearchDBService, RedisCacheService
 
 class PersonService:
     def __init__(self, elastic: AsyncElasticsearch, redis: Redis, index_name: str):
-        # super().__init__(elastic, redis)
         self.es_service = ElasticsearchDBService(elastic, redis)
         self.redis_service = RedisCacheService(redis)
         self.index_name = index_name
@@ -35,7 +34,6 @@ class PersonService:
 
     async def get_persons_by_search(self, query_params: SearchParam) -> list[PersonDetails] | None:
         persons = await self.es_service.get_list(self.index_name, query_params)
-
         return persons if persons else None
 
 

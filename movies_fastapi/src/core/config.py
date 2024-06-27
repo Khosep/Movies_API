@@ -24,6 +24,8 @@ class AppSettings(BaseSettings):
     tag_genres: str = 'Genres'
     tag_persons: str = 'Persons'
 
+    page_size: int = 20
+
 
 class ESSettings(BaseSettings):
     model_config = SettingsConfigDict(env_file=ENV_PATH, env_file_encoding='utf-8', extra='ignore')
