@@ -3,14 +3,14 @@ import pathlib
 from pydantic import RedisDsn
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-BASE_DIR = pathlib.Path(__file__).resolve().parent.parent  # abs path to \src
-ENV_PATH = pathlib.Path(BASE_DIR, '.env')
+BASE_DIR = pathlib.Path(__file__).resolve().parent.parent  # abs path to /movies_fastapi
+ENV_PATH = pathlib.Path(BASE_DIR, '.env')   # path to movies_fastapi/.env
 
 
 class AppSettings(BaseSettings):
     model_config = SettingsConfigDict(env_file=ENV_PATH, env_file_encoding='utf-8', extra='ignore')
 
-    app_title: str = "Movies"
+    app_title: str = 'Movies'
     # project_name: str = 'movies_fastapi'
     project_host: str = ...
     project_port: int = ...

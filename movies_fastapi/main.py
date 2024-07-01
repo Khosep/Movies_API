@@ -1,3 +1,4 @@
+import logging
 from contextlib import asynccontextmanager
 
 import uvicorn
@@ -8,15 +9,21 @@ from redis.asyncio import Redis
 
 from api.v1 import base_api, film_api, person_api, genre_api
 from core.config import app_settings, redis_settings, es_settings
+from core.logger import LOGGING
 from db import elastic
 from db import redis
+
+logging.config.dictConfig(LOGGING)
+logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup
     redis.redis = Redis.from_url(redis_settings.redis_url)
+    logger.info(f'redis conncection: %s', await redis.redis.ping())
     elastic.es = AsyncElasticsearch(es_settings.es_url)
+    logger.info(f'elasticsearch conncection: %s', await elastic.es.ping())
     yield
     # Finish (clean up and release the resources)
     await redis.redis.close()
