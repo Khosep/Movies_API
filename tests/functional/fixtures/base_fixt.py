@@ -7,7 +7,7 @@ from aiohttp import ClientSession
 from functional.settings import test_settings
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope='session')
 def event_loop():
     """Create event loop."""
 
@@ -17,7 +17,7 @@ def event_loop():
     loop.close()
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope='session')
 async def a_client() -> AsyncGenerator[ClientSession, None]:
     """
     Get a client for making http requests.
@@ -31,7 +31,7 @@ async def a_client() -> AsyncGenerator[ClientSession, None]:
 
 @pytest.fixture
 def make_get_request(
-    a_client: ClientSession,
+        a_client: ClientSession,
 ) -> Callable[[str, dict | None], Coroutine[Any, Any, dict[str, Any]]]:
     """
     Make a GET request to a specific endpoint by passing parameters.
@@ -39,18 +39,47 @@ def make_get_request(
     """
 
     async def inner(
-        endpoint: str, params: dict | None = None
+            endpoint: str,
+            params: dict | None = None,
     ) -> dict[str, Any]:
         params = params or {}
         url = f"{test_settings.app_url}{endpoint}"
         async with a_client.get(url=url, params=params) as resp:
             return {
-                "body": await resp.json(),
-                "status": resp.status,
-                "headers": resp.headers,
-                "url": resp.url,
+                'body': await resp.json(),
+                'status': resp.status,
+                'headers': resp.headers,
+                'url': resp.url,
             }
 
     return inner
 
-# TODO make fixt for POST request
+
+@pytest.fixture
+def make_post_request(
+        a_client: ClientSession,
+) -> Callable[[str, dict | None], Coroutine[Any, Any, dict[str, Any]]]:
+    """
+    Make a POST request to a specific endpoint by passing parameters, data, headers.
+    Get the response.
+    """
+
+    async def inner(
+            endpoint: str,
+            params: dict | None = None,
+            data: dict | None = None,
+            headers: dict | None = None,
+    ) -> dict[str, Any]:
+        params = params or {}
+        data = data or {}
+        headers = headers or {}
+        url = f"{test_settings.app_url}{endpoint}"
+        async with a_client.post(url=url, params=params, data=data, headers=headers) as resp:
+            return {
+                'body': await resp.json(),
+                'status': resp.status,
+                'headers': resp.headers,
+                'url': resp.url,
+            }
+
+    return inner
