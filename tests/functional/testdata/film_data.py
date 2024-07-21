@@ -8,7 +8,7 @@ film_to_load = {
         "title": "Star Wars: Episode IV - A New Hope",
         "description": "The Imperial Forces, under orders from cruel Darth Vader...",
         "imdb_rating": 8.6,
-        "genre": [
+        "genres": [
             {"name": "Action", "uuid": "3d8d9bf5-0d90-4353-88ba-4ccc5d2c07ff"},
             {
                 "name": "Adventure",
@@ -57,7 +57,7 @@ film_to_load = {
         "description": "The film has no known actors, directors, or writers."
         " Genres are not defined either.",
         "imdb_rating": 10.0,
-        "genre": [],
+        "genres": [],
         "actors": [],
         "writers": [],
         "directors": [],
@@ -67,7 +67,7 @@ film_to_load = {
         "title": "Flaming Star",
         "description": "West Texas in the years after the Civil War ...",
         "imdb_rating": 6.5,
-        "genre": [
+        "genres": [
             {"name": "Western", "uuid": "0b105f87-e0a5-45dc-8ce7-f8632088f390"}
         ],
         "actors": [
@@ -110,7 +110,7 @@ film_to_load = {
         "title": "film4",
         "description": "pass",
         "imdb_rating": 4.0,
-        "genre": [
+        "genres": [
             {"name": "Action", "uuid": "3d8d9bf5-0d90-4353-88ba-4ccc5d2c07ff"},
             {
                 "name": "Fantasy",
@@ -126,7 +126,7 @@ film_to_load = {
         "title": "film5",
         "description": "pass",
         "imdb_rating": 9,
-        "genre": [
+        "genres": [
             {"name": "Action", "uuid": "3d8d9bf5-0d90-4353-88ba-4ccc5d2c07ff"},
         ],
         "actors": [],
@@ -158,7 +158,7 @@ def get_films_to_load(
             "title": title,
             "description": "The Imperial Forces, under orders from cruel Darth Vader...",
             "imdb_rating": 8.6,
-            "genre": [
+            "genres": [
                 {
                     "name": "Action",
                     "uuid": "3d8d9bf5-0d90-4353-88ba-4ccc5d2c07ff",

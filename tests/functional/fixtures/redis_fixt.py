@@ -8,14 +8,15 @@ from functional.settings import test_settings
 
 @pytest.fixture(scope="session")
 async def redis_client() -> AsyncGenerator[Redis, None]:
-    """Создаем клиента для работы с Redis. В конце закрываем его."""
+    """Create the client to work with Redis. At the end, we close it."""
 
     client = Redis.from_url(test_settings.redis_dsn)
     yield client
     await client.aclose()
 
+
 @pytest.fixture(autouse=True)
 async def redis_clear_cache(redis_client: Redis) -> None:
-    """Сбрасываем кэш"""
+    """Reset the cache."""
 
     await redis_client.flushall()

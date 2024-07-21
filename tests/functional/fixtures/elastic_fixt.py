@@ -20,9 +20,6 @@ async def create_indexes(es_client: AsyncElasticsearch):
     """Create indexes for Elasticsearch, having previously deleted the old ones."""
 
     for index_name in IndexName:
-        # TODO Delete
-        # index_name = index_name.value
-
         if await es_client.indices.exists(index=index_name):
             await es_client.indices.delete(index=index_name)
         await es_client.indices.create(

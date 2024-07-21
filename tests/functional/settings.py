@@ -184,17 +184,17 @@ class TestSettings(BaseSettings):
     prefix: str = '/api/v1'
 
     redis_host: str = Field(default="127.0.0.1")
-    redis_port: int = Field(default=6379)
+    redis_port: int = Field(default=5379)
 
     es_host: str = Field(default="127.0.0.1")
     es_port: int = Field(default=9200)
 
-    fastapi_host: str = Field(default="127.0.0.1")
-    fastapi_port: int = Field(default=8000)
+    project_host: str = Field(default="127.0.0.1")
+    project_port: int = Field(default=8000)
 
     @property
     def app_url(self) -> HttpUrl:
-        return f"http://{self.fastapi_host}:{self.fastapi_port}"
+        return f"http://{self.project_host}:{self.project_port}"
 
     @property
     def es_url(self) -> HttpUrl:

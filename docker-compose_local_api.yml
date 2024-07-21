@@ -1,0 +1,77 @@
+version: '3'
+services:
+  db:
+    container_name: pg-movies
+    build:
+      context: ./sqlite_to_postgres/postgres
+    env_file:
+      - .env
+    ports:
+      - 5432:5432
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: always
+
+  load_data:
+    container_name: to-postgres
+    build:
+      context: ./sqlite_to_postgres/sqlite_to_postgres
+    env_file:
+      - .env
+    depends_on:
+      - db
+
+#  nginx:
+#    image: nginx:stable
+#    container_name: nginx-movies
+#    ports:
+#      - ${NGINX_PORTS}
+#    volumes:
+#      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+#      - ./nginx/sites-available:/etc/nginx/conf.d:ro
+#      - ./data:/data/:ro
+#      - static:/opt/app/static
+#      - media:/opt/app/media
+#    env_file: .env
+#    depends_on:
+#      - load_data
+
+  elasticsearch:
+    image: elasticsearch:8.9.0
+    container_name: es-movies
+    ports:
+      - ${ES_PORT}:${ES_PORT}
+    restart: always
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - ingest.geoip.downloader.enabled=false
+    env_file: .env
+
+  redis:
+    image: redis:7.2.3-alpine3.19
+    container_name: redis
+    expose:
+      - 6379
+    #ports:
+      #- 6379:6379
+    volumes:
+      - redis_data:/data
+    restart: always
+    command: redis-server --save 60 1 --loglevel notice
+
+  etl:
+    build: ./etl
+    container_name: etl-movies
+    restart: always
+    env_file: .env
+    depends_on:
+      - load_data
+#      - nginx
+      - elasticsearch
+
+volumes:
+  postgres_data:
+  redis_data:
+#  media:
