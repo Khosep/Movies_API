@@ -1,3 +1,4 @@
+from copy import deepcopy
 from http import HTTPStatus
 
 import pytest
@@ -35,8 +36,8 @@ async def test_film_details_status(
     endpoint = f'{ENDPOINT_EXACT_SEARCH}/{film_uuid["uuid"]}'
 
     film_data_in = [
-        film_to_load['film1'],
-        film_to_load['film2'],
+        film_to_load['film 1'],
+        film_to_load['film 2'],
     ]
     # load data to elastic
     await es_load(INDEX_NAME, film_data_in)
@@ -52,7 +53,7 @@ async def test_film_details_fields(
 ):
     """Check the correctness and completeness of the data return."""
 
-    film_data_in = film_to_load['film1']
+    film_data_in = film_to_load['film 1']
     endpoint = f'{ENDPOINT_EXACT_SEARCH}/{film_data_in["uuid"]}'
 
     await es_load(INDEX_NAME, [film_data_in])
@@ -69,7 +70,7 @@ async def test_film_details_cache(
 ):
     """Check the cache operation."""
 
-    film_data_in = film_to_load['film1']
+    film_data_in = deepcopy(film_to_load['film 1'])
     endpoint = f'{ENDPOINT_EXACT_SEARCH}/{film_data_in["uuid"]}'
 
     film_title = film_data_in['title']

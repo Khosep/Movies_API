@@ -35,9 +35,9 @@ async def test_film_list_fields(
         ]
     )
     assert response['body'][2] == {
-        'uuid': film_to_load['film1']['uuid'],
-        'title': film_to_load['film1']['title'],
-        'imdb_rating': film_to_load['film1']['imdb_rating'],
+        'uuid': film_to_load['film 1']['uuid'],
+        'title': film_to_load['film 1']['title'],
+        'imdb_rating': film_to_load['film 1']['imdb_rating'],
     }
 
 
@@ -48,23 +48,30 @@ async def test_film_list_fields(
                 {'sort': '-imdb_rating'},
                 {
                     'status': HTTPStatus.OK,
-                    'order': ['film2', 'film5', 'film1', 'film3', 'film4'],
+                    'order': ['film 2', 'film 5', 'film 1', 'film 3', 'film 4'],
+                },
+        ),
+        (
+                {},  # default is {sort': '-imdb_rating'}
+                {
+                    'status': HTTPStatus.OK,
+                    'order': ['film 2', 'film 5', 'film 1', 'film 3', 'film 4'],
                 },
         ),
         (
                 {'sort': 'imdb_rating'},
                 {
                     'status': HTTPStatus.OK,
-                    'order': ['film4', 'film3', 'film1', 'film5', 'film2'],
+                    'order': ['film 4', 'film 3', 'film 1', 'film 5', 'film 2'],
                 },
         ),
         (
                 {'sort': '-imdb_rating', 'genre_name': 'Action'},
-                {'status': HTTPStatus.OK, 'order': ['film5', 'film1', 'film4']},
+                {'status': HTTPStatus.OK, 'order': ['film 5', 'film 1', 'film 4']},
         ),
         (
                 {'sort': 'imdb_rating', 'genre_name': 'Action'},
-                {'status': HTTPStatus.OK, 'order': ['film4', 'film1', 'film5']},
+                {'status': HTTPStatus.OK, 'order': ['film 4', 'film 1', 'film 5']},
         ),
         (
                 {

@@ -1,9 +1,8 @@
 import uuid
 from typing import Any
 
-
 film_to_load = {
-    'film1': {
+    'film 1': {
         'uuid': '3d825f60-9fff-4dfe-b294-1a45fa1e115d',
         'title': 'Star Wars: Episode IV - A New Hope',
         'description': 'The Imperial Forces, under orders from cruel Darth Vader...',
@@ -51,18 +50,18 @@ film_to_load = {
             },
         ],
     },
-    'film2': {
+    'film 2': {
         'uuid': '88888888-8888-8888-8888-888888888888',
         'title': 'Film without any genres and persons',
         'description': 'The film has no known actors, directors, or writers.'
-        ' Genres are not defined either.',
+                       ' Genres are not defined either.',
         'imdb_rating': 10.0,
         'genres': [],
         'actors': [],
         'writers': [],
         'directors': [],
     },
-    'film3': {
+    'film 3': {
         'uuid': '80d1bf50-ce62-43a8-b852-6f116ce4f91b',
         'title': 'Flaming Star',
         'description': 'West Texas in the years after the Civil War ...',
@@ -105,9 +104,9 @@ film_to_load = {
             },
         ],
     },
-    'film4': {
+    'film 4': {
         'uuid': '44444444-4444-4444-4444-444444444444',
-        'title': 'film4',
+        'title': 'film 4',
         'description': 'pass',
         'imdb_rating': 4.0,
         'genres': [
@@ -121,9 +120,9 @@ film_to_load = {
         'writers': [],
         'directors': [],
     },
-    'film5': {
+    'film 5': {
         'uuid': '55555555-5555-5555-5555-555555555555',
-        'title': 'film5',
+        'title': 'film 5',
         'description': 'pass',
         'imdb_rating': 9,
         'genres': [
@@ -136,11 +135,11 @@ film_to_load = {
 }
 
 FILM = {
-    '3d825f60-9fff-4dfe-b294-1a45fa1e115d': 'film1',
-    '88888888-8888-8888-8888-888888888888': 'film2',
-    '80d1bf50-ce62-43a8-b852-6f116ce4f91b': 'film3',
-    '44444444-4444-4444-4444-444444444444': 'film4',
-    '55555555-5555-5555-5555-555555555555': 'film5',
+    '3d825f60-9fff-4dfe-b294-1a45fa1e115d': 'film 1',
+    '88888888-8888-8888-8888-888888888888': 'film 2',
+    '80d1bf50-ce62-43a8-b852-6f116ce4f91b': 'film 3',
+    '44444444-4444-4444-4444-444444444444': 'film 4',
+    '55555555-5555-5555-5555-555555555555': 'film 5',
 }
 
 GENRE_PARAM = {
@@ -150,7 +149,7 @@ GENRE_PARAM = {
 
 
 def get_films_to_load(
-    number: int, *, title: str = 'film', rating: int = 9
+        number: int, *, title: str = 'film', rating: int = 9
 ) -> list[dict[str, Any]]:
     films_to_load = [
         {

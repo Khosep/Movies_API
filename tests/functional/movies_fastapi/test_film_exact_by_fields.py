@@ -1,4 +1,5 @@
 import json
+from copy import deepcopy
 from http import HTTPStatus
 
 import pytest
@@ -17,20 +18,20 @@ ENDPOINT_EXACT_SEARCH = f'{test_settings.prefix}/{INDEX_NAME}/exact_search'
         (
                 {
                     'uuid': '11111111-1111-1111-1111-111111111111',
-                    'title': 'film1',
+                    'title': 'film 1',
                     'imdb_rating': 10
                 },
                 {'length': 1, 'status': HTTPStatus.OK},
         ),
         (
                 {
-                    'title': 'film1',
+                    'title': 'film 1',
                     'imdb_rating': 10,
                 },
                 {'length': 2, 'status': HTTPStatus.OK},
         ),
         (
-                {'title': 'film1'},
+                {'title': 'film 1'},
                 {'length': 3, 'status': HTTPStatus.OK},
         ),
         (
@@ -39,7 +40,7 @@ ENDPOINT_EXACT_SEARCH = f'{test_settings.prefix}/{INDEX_NAME}/exact_search'
         ),
         (
                 {
-                    'title': 'film1',
+                    'title': 'film 1',
                     'imdb_rating': 1,
                 },
                 {'length': 1, 'status': HTTPStatus.NOT_FOUND},
@@ -57,10 +58,10 @@ async def test_film_by_fields_status(
     endpoint = ENDPOINT_EXACT_SEARCH
 
     film_data_in = [
-        *get_films_to_load(2, title='film1', rating=10),
-        *get_films_to_load(1, title='film1', rating=8),
-        *get_films_to_load(1, title='film2', rating=10),
-        *get_films_to_load(1, title='film3', rating=7),
+        *get_films_to_load(2, title='film 1', rating=10),
+        *get_films_to_load(1, title='film 1', rating=8),
+        *get_films_to_load(1, title='film 2', rating=10),
+        *get_films_to_load(1, title='film 3', rating=7),
     ]
     target_uuid = '11111111-1111-1111-1111-111111111111'
     film_data_in[0]['uuid'] = target_uuid
@@ -91,12 +92,12 @@ async def test_film_by_fields_fields(
     endpoint = ENDPOINT_EXACT_SEARCH
 
     film_data_in = [
-        *get_films_to_load(2, title='film1', rating=10),
-        *get_films_to_load(1, title='film1', rating=8),
-        *get_films_to_load(1, title='film2', rating=10),
-        *get_films_to_load(1, title='film3', rating=7),
+        *get_films_to_load(2, title='film 1', rating=10),
+        *get_films_to_load(1, title='film 1', rating=8),
+        *get_films_to_load(1, title='film 2', rating=10),
+        *get_films_to_load(1, title='film 3', rating=7),
     ]
-    target_title = 'film1'
+    target_title = 'film 1'
     target_rating = 10
     request_data = {'title': target_title, 'imdb_rating': target_rating}
 
@@ -121,7 +122,7 @@ async def test_film_by_fields_cache(
 ):
     """Check the cache operation."""
 
-    film_data_in = film_to_load['film1']
+    film_data_in = deepcopy(film_to_load['film 1'])
     endpoint = ENDPOINT_EXACT_SEARCH
 
     film_title = film_data_in['title']
