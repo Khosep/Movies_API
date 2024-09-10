@@ -7,8 +7,10 @@ services:
       context: ./sqlite_to_postgres/postgres
     env_file:
       - .env
-    expose:
-      - 5432
+#    expose:
+#      - 5432
+    ports:
+      - ${POSTGRES_PORT_OUT}:${POSTGRES_PORT}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
