@@ -13,23 +13,6 @@ from .schemas.query_params import SearchParam
 router = APIRouter()
 
 
-@router.get('/exact_search/{person_id}',
-            response_model=PersonDetails,
-            summary='Get person information (exact match)',
-            description='Get full information about person by its uuid',
-            )
-async def person_details(
-        person_id: UUID,
-        person_service: Annotated[PersonService, Depends(get_person_service)],
-) -> PersonDetails:
-
-    person = await person_service.get_person_by_uuid(person_id)
-    if not person:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Person not found')
-
-    return person
-
-
 @router.get('/exact_search/name/{full_name}',
             response_model=list[PersonDetails],
             summary='Get person/s (exact match)',
@@ -45,6 +28,23 @@ async def person_by_name(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Persons not found')
 
     return persons
+
+
+@router.get('/exact_search/{person_id}',
+            response_model=PersonDetails,
+            summary='Get person information (exact match)',
+            description='Get full information about person by its uuid',
+            )
+async def person_details(
+        person_id: UUID,
+        person_service: Annotated[PersonService, Depends(get_person_service)],
+) -> PersonDetails:
+
+    person = await person_service.get_person_by_uuid(person_id)
+    if not person:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Person not found')
+
+    return person
 
 
 @router.get('/search',
