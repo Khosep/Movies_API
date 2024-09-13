@@ -33,9 +33,8 @@ async def test_person_details_status(
 ):
     """Check the success of the data return"""
 
-    endpoint = f'{ENDPOINT_EXACT_SEARCH}/{person_uuid["uuid"]}'
-
     person_data_in = person_to_load
+    endpoint = f'{ENDPOINT_EXACT_SEARCH}/{person_uuid["uuid"]}'
     # load data to elastic
     await es_load(INDEX_NAME, person_data_in)
 
@@ -69,7 +68,6 @@ async def test_person_details_cache(
 
     person_data_in = deepcopy(person_to_load[0])
     endpoint = f'{ENDPOINT_EXACT_SEARCH}/{person_data_in["uuid"]}'
-
     person_name = person_data_in['full_name']
     new_person_name = 'New Person Name'
 

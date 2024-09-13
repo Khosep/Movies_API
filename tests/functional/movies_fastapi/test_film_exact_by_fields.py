@@ -55,14 +55,13 @@ async def test_film_by_fields_status(
         es_load, make_post_request, request_data, expected_response):
     """Check the success of the data return"""
 
-    endpoint = ENDPOINT_EXACT_SEARCH
-
     film_data_in = [
         *get_films_to_load(2, title='film 1', rating=10),
         *get_films_to_load(1, title='film 1', rating=8),
         *get_films_to_load(1, title='film 2', rating=10),
         *get_films_to_load(1, title='film 3', rating=7),
     ]
+    endpoint = ENDPOINT_EXACT_SEARCH
     target_uuid = '11111111-1111-1111-1111-111111111111'
     film_data_in[0]['uuid'] = target_uuid
 
@@ -89,18 +88,16 @@ async def test_film_by_fields_fields(
 ):
     """Check the correctness and completeness of the data return."""
 
-    endpoint = ENDPOINT_EXACT_SEARCH
-
     film_data_in = [
         *get_films_to_load(2, title='film 1', rating=10),
         *get_films_to_load(1, title='film 1', rating=8),
         *get_films_to_load(1, title='film 2', rating=10),
         *get_films_to_load(1, title='film 3', rating=7),
     ]
+    endpoint = ENDPOINT_EXACT_SEARCH
     target_title = 'film 1'
     target_rating = 10
     request_data = {'title': target_title, 'imdb_rating': target_rating}
-
     target_response = [film for film in film_data_in
                        if film['title'] == target_title and film['imdb_rating'] == target_rating]
 

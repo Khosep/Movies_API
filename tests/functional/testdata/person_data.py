@@ -1,3 +1,6 @@
+import uuid
+from typing import Any
+
 person_to_load = [
     {
         'uuid': '1f6ad693-a134-44f1-a0a6-71e4c0dec31a',
@@ -50,3 +53,25 @@ person_to_load = [
         ]
     }
 ]
+
+
+def get_persons_to_load(
+        number: int, *, full_name: str = 'John') -> list[dict[str, Any]]:
+    persons_to_load = [
+        {
+            'uuid': str(uuid.uuid4()),
+            'full_name': full_name,
+            'films': [
+                {
+                    'uuid': '50d842be-bcda-401e-90de-b06929611ce0',
+                    'title': 'Star Trek: Nemesis',
+                    'imdb_rating': 6.4,
+                    'roles': [
+                        'writer'
+                    ]
+                }
+            ]
+        }
+        for _ in range(number)
+    ]
+    return persons_to_load

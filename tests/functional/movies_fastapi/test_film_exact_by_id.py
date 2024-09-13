@@ -33,15 +33,13 @@ async def test_film_details_status(
 ):
     """Check the success of the data return"""
 
-    endpoint = f'{ENDPOINT_EXACT_SEARCH}/{film_uuid["uuid"]}'
-
     film_data_in = [
         film_to_load['film 1'],
         film_to_load['film 2'],
     ]
+    endpoint = f'{ENDPOINT_EXACT_SEARCH}/{film_uuid["uuid"]}'
     # load data to elastic
     await es_load(INDEX_NAME, film_data_in)
-
     response = await make_get_request(endpoint)
 
     assert response['status'] == expected_response['status']

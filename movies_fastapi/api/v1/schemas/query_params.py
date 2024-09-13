@@ -35,7 +35,7 @@ class FilmListParam(PageParam, GenreNameFilter):
 
 
 class SearchParam(PageParam):
-    query: Annotated[str | None, Query(..., min_length=1, description='Строка запроса для поиска фильмов')]
+    query: Annotated[str | None, Query(..., min_length=1, description='Строка запроса для поиска')]
 
 
 class FilmTotalParam(SearchParam, GenreNameFilter):

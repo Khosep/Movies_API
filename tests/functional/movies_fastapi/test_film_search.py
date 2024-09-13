@@ -14,8 +14,6 @@ INDEX_NAME = IndexName.MOVIES.value
 ENDPOINT_SEARCH = f'{test_settings.prefix}/{INDEX_NAME}/search'
 
 
-# TODO This is the copy of another test file. Change step by step.
-
 @pytest.mark.parametrize(
     'query_params, expected_response',
     [
@@ -145,7 +143,7 @@ async def test_film_search_fields(
 async def test_film_search_relevance(
         es_load, make_get_request, params, expected_order
 ):
-    """Check the sorting and filtering parameters by genre."""
+    """Check the correct return order."""
 
     film_data_in = [
         *get_films_to_load(1, title='Star Wars. Episode I: The Phantom Menace', rating=4),
@@ -219,7 +217,6 @@ async def test_film_search_sort_genre(
         else None
     )
     assert received_order == expected_order['order']
-
 
     await es_load(INDEX_NAME, film_data_in)
     response = await make_get_request(endpoint, params)
