@@ -2,17 +2,15 @@ from functools import lru_cache
 from typing import Annotated
 from uuid import UUID
 
-from elasticsearch import AsyncElasticsearch
-from fastapi import Depends, Request
-from redis.asyncio import Redis
-
-from api.v1.schemas.film_schema import FilmDetails
 from api.v1.schemas.person_schema import PersonDetails, PersonName
 from api.v1.schemas.query_params import SearchParam
 from core.config import es_settings
 from core.utils import cache
 from db.elastic import get_elastic
 from db.redis import get_redis
+from elasticsearch import AsyncElasticsearch
+from fastapi import Depends, Request
+from redis.asyncio import Redis
 from services.base_service import ElasticsearchDBService, RedisCacheService
 
 

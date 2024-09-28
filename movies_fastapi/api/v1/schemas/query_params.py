@@ -9,10 +9,9 @@
 import enum
 from typing import Annotated
 
+from core.config import app_settings
 from fastapi import Query
 from pydantic import BaseModel, ConfigDict
-
-from core.config import app_settings
 
 
 class SortRating(str, enum.Enum):
@@ -25,17 +24,19 @@ class PageParam(BaseModel):
     page_size: Annotated[int, Query(app_settings.page_size, ge=1, description='Количество записей на странице')]
 
 
-class FilmListParam(PageParam):
+class GenreNameFilter(BaseModel):
+    genre_name: Annotated[str | None, Query(None, description='Фильтрация по жанру')]
+
+
+class FilmListParam(PageParam, GenreNameFilter):
     model_config = ConfigDict(use_enum_values=True)
 
     sort: Annotated[SortRating | None, Query(SortRating.DESC.value, description='Поле сортировки')]
-    genre_name: Annotated[str | None, Query(None, description='Фильтрация по жанру')]
-    # genre: Annotated[UUID | None, Query(None, description='Фильтрация по жанру')]
 
 
 class SearchParam(PageParam):
-    query: Annotated[str | None, Query(..., description='Строка запроса для поиска фильмов')]
+    query: Annotated[str | None, Query(..., min_length=1, description='Строка запроса для поиска')]
 
 
-class FilmTotalParam(SearchParam, FilmListParam):
-    pass
+class FilmTotalParam(SearchParam, GenreNameFilter):
+    sort: Annotated[SortRating | None, Query(None, description='Поле сортировки')]

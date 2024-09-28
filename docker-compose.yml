@@ -7,10 +7,8 @@ services:
       context: ./sqlite_to_postgres/postgres
     env_file:
       - .env
-#    expose:
-#      - 5432
-    ports:
-      - ${POSTGRES_PORT_OUT}:${POSTGRES_PORT}
+    expose:
+      - 5432
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -42,10 +40,8 @@ services:
       - bootstrap.memory_lock=true
       - ingest.geoip.downloader.enabled=false
       - logger.level=WARN
-#    expose:
-#      - ${ES_PORT}
-    ports:
-      - ${ES_PORT}:${ES_PORT}
+    expose:
+      - ${ES_PORT}
     volumes:
       - elastic_data:/usr/share/elasticsearch/data
     healthcheck:
@@ -58,10 +54,8 @@ services:
   redis:
     container_name: redis-movies
     image: redis:7.2.3-alpine3.19
-#    expose:
-#      - ${REDIS_PORT}
-    ports:
-      - ${REDIS_PORT_OUT}:${REDIS_PORT}
+    expose:
+      - ${REDIS_PORT}
     volumes:
       - redis_data:/data
     restart: always
@@ -88,12 +82,8 @@ services:
       context: ./movies_fastapi
     env_file:
       - .env
-    environment:
-      - PROJECT_HOST=localhost
-      - PROJECT_PORT=8000
-    #if there are conflicting variables defined both in the 'environment' section and in the '.env' file, the values in the 'environment' section will take precedence.
-    ports:
-      - ${PROJECT_PORT}:${PROJECT_PORT}
+    expose:
+      - 8000
     volumes:
       - fastapi_log:/usr/src/movies_fastapi/logs
     depends_on:
@@ -102,6 +92,19 @@ services:
     restart: always
     command: gunicorn -w 4 -k uvicorn.workers.UvicornWorker -b :8000 main:app
 
+#  nginx:
+#    container_name: nginx
+#    image: nginx:1.25-bookworm
+#    ports:
+#      - ${NGINX_PORTS}
+#    volumes:
+#      - nginx_log:/var/log/nginx
+#      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+#      - ./nginx/conf.d/default.conf:/etc/nginx/conf.d/default.conf:ro
+#      - /etc/timezone:/etc/timezone:ro
+#    depends_on:
+#      - movies_fastapi
+#    restart: always
 
 volumes:
   postgres_data:
@@ -109,3 +112,4 @@ volumes:
   redis_data:
   elastic_data:
   fastapi_log:
+#  nginx_log:
