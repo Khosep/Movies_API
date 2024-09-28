@@ -182,7 +182,7 @@ ENV_PATH = os.path.join(BASE_DIR, '.env')
 
 class TestSettings(BaseSettings):
 
-    docker_mode: bool = False
+    docker_mode: bool = ...
     if docker_mode:
         model_config = SettingsConfigDict(
             env_file=ENV_PATH,

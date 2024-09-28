@@ -1,0 +1,73 @@
+version: '3.8'
+
+services:
+  test_elastic_movies:
+    container_name: test_es_movies
+    image: elasticsearch:8.9.0
+    environment:
+      - 'ES_JAVA_OPTS=-Xms512m -Xmx512m'
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - cluster.routing.allocation.disk.threshold_enabled=false
+      - bootstrap.memory_lock=true
+      - ingest.geoip.downloader.enabled=false
+      - logger.level=WARN
+    expose:
+      - ${TEST_ES_PORT}
+    healthcheck:
+      test: curl -s http://localhost:${TEST_ES_PORT} >/dev/null || exit 1
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
+  test_redis_movies:
+    container_name: test_redis_movies
+    image: redis:7.2.3-alpine3.19
+    expose:
+      - ${TEST_REDIS_PORT}
+    restart: 'no'
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    command: redis-server --save 60 1 --loglevel warning
+
+  test_movies_fastapi:
+    container_name: test_movies_fastapi
+    build:
+      context: ./../movies_fastapi
+    environment:
+      - PROJECT_HOST=${TEST_PROJECT_HOST}
+      - PROJECT_PORT=${TEST_PROJECT_PORT}
+      - ES_HOST=${TEST_ES_HOST}
+      - ES_PORT=${TEST_ES_PORT}
+      - REDIS_HOST=${TEST_REDIS_HOST}
+      - REDIS_PORT=${TEST_REDIS_PORT}
+    #if there are conflicting variables defined both in the 'environment' section and in the '.env' file, the values in the 'environment' section will take precedence.
+    ports:
+      - ${TEST_PROJECT_PORT}:${TEST_PROJECT_PORT}
+    depends_on:
+      test_elastic_movies:
+        condition: service_healthy
+      test_redis_movies:
+        condition: service_healthy
+    restart: 'no'
+    command: gunicorn -w 4 -k uvicorn.workers.UvicornWorker -b :${TEST_PROJECT_PORT} main:app
+    healthcheck:
+      test: curl -s -f http://localhost:${TEST_PROJECT_PORT}/api/openapi || exit 1
+      interval: 5s
+      timeout: 2s
+      retries: 3
+
+  tests:
+    env_file:
+      - .env
+    container_name: tests
+    build:
+      context: .
+    image: tests_img
+    depends_on:
+      test_movies_fastapi:
+        condition: service_healthy
